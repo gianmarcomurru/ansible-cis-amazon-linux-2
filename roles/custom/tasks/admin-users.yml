@@ -1,0 +1,64 @@
+---
+- name: Make sure a group 'operation' exists
+  ansible.builtin.group:
+    name: operation
+    state: present
+  tags:
+    - ops-users
+
+- name: Create users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    shell: /bin/bash
+    groups: operation
+    append: true
+    state: present
+    comment: Operation sysadmin
+    password: "{{ item.password }}"
+    password_expire_min: "{{ password_expire_min }}"
+    password_expire_max: "{{ password_expire_max }}"
+    create_home: true
+  with_items: "{{ sudoers }}"
+  tags:
+    - ops-users
+
+- name: Set users password policy
+  ansible.builtin.command: >-
+    chage {{ item.name }} -W {{ password_expire_warning }} -I
+    {{ password_expire_inactive }} -d {{ item.password_last_change }}
+  with_items: "{{ sudoers }}"
+  tags:
+    - ops-users
+
+- name: Set home permissions
+  ansible.builtin.file:
+    path: /home/{{ item.name }}
+    state: directory
+    recurse: true
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: "0700"
+  with_items: "{{ sudoers }}"
+  tags:
+    - ops-users
+
+- name: Copy login script in each user home
+  ansible.builtin.copy:
+    src: .login
+    dest: /home/.login
+    owner: root
+    group: root
+    mode: "0770"
+  tags:
+    - ops-users
+
+- name: Copy sudoers to /etc/sudoers
+  ansible.builtin.copy:
+    src: sudoers
+    dest: /etc/sudoers
+    owner: root
+    group: root
+    mode: "0644"
+    validate: visudo -cf %s
+  tags:
+    - ops-users

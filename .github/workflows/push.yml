@@ -1,0 +1,69 @@
+name: Push pipeline
+
+on:
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build:
+    runs-on: [self-hosted, X64]
+    steps:
+      - uses: actions/checkout@v3
+      - run: make check
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::1234567891011:role/CiEc2PackerBuild
+          aws-region: eu-west-1
+      - run: |
+          make ami type=${{ inputs.type }} | tee build.log
+          packer build -machine-readable packer.json | tee build.log
+          grep 'amazon-ebs.amazon_linux_2: AMI:' build.log | awk '{print $4}'
+          grep 'amazon-ebs.amazon_linux_2: AMI:' build.log | awk '{print $4}' > ami.txt
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ami
+          path: ami.txt
+
+  deploy-to-staging:
+    runs-on: [self-hosted, X64]
+    environment: staging
+    needs: [build, git-tag]
+    if: ${{ inputs.deploy-to-staging == true }}
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: ami
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::1234567891011:role/CiEc2PackerBuild
+          aws-region: eu-west-1
+      - run: |
+          ACCOUNT="2345678910112"
+          AMI=`cat ami.txt`
+          echo "Sharing $AMI with account $ACCOUNT"
+          aws ec2 modify-image-attribute --image-id $AMI --launch-permission "{\"Add\":[{\"UserId\":\"$ACCOUNT\"}]}"
+
+  deploy-to-production:
+    runs-on: [self-hosted, X64]
+    environment: production
+    needs: deploy-to-staging
+    if: ${{ inputs.deploy-to-production == true }}
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: ami
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::1234567891011:role/CiEc2PackerBuild
+          aws-region: eu-west-1
+      - run: |
+          ACCOUNT="3456789101123"
+          AMI=`cat ami.txt`
+          echo "sharing $AMI with account $ACCOUNT"
+          aws ec2 modify-image-attribute --image-id $AMI --launch-permission "{\"Add\":[{\"UserId\":\"$ACCOUNT\"}]}"

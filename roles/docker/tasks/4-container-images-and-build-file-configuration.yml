@@ -1,0 +1,40 @@
+---
+# 4 Container Images and Build File Configuration
+
+# 4.1 Ensure that a user for the container has been created
+# Ensured in fintech_company/docker-base-java
+
+# 4.2 Ensure that containers use only trusted base images
+# We only use alpine [ v3.11, v3.16.2, 3.17.1 ]
+
+# 4.3 Ensure that unnecessary packages are not installed in the container
+# Ensured in fintech_company/docker-base-java
+
+# 4.7 Ensure update instructions are not used alone in Dockerfiles
+# Ensured in fintech_company/docker-base-java using the --no-cache flag during the docker build process
+
+# 4.8 Ensure setuid and setgid permissions are removed
+# Ensured in fintech_company/docker-base-java
+
+# 4.9 Ensure that COPY is used instead of ADD in Dockerfiles
+# Ensured in fintech_company/docker-base-java
+
+# 4.10 Ensure secrets are not stored in Dockerfiles
+# Ensured in fintech_company/docker-base-java
+
+# 4.11 Ensure only verified packages are installed
+# Ensured in fintech_company/docker-base-java
+
+# 4.12 Ensure all signed artifacts are validated
+# Ensured in fintech_company/docker-base-java
+
+# 4.4 Ensure images are scanned and rebuilt to include security patches
+# We use Amazon ECR Enhanced scanning feature to scan images for vulnerabilities on push
+# Visit https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-enhanced.html for more information
+
+# 4.5 Ensure Content trust for Docker is Enabled
+# Content trust is currently only available for users of the public Docker Hub while we use Amazon ECR
+
+# 4.6 Ensure that HEALTHCHECK instructions have been added to container images
+# We use Amazon ELB health checks to monitor the health of our containers
+# Visit https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html for more information

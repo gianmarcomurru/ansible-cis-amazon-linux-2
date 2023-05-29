@@ -1,0 +1,6 @@
+---
+# 2 Services
+
+- ansible.builtin.include_tasks: 2-1.yml
+- ansible.builtin.include_tasks: 2-2.yml
+- ansible.builtin.include_tasks: 2-3.yml

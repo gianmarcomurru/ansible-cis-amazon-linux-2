@@ -1,0 +1,402 @@
+---
+- ansible.builtin.fail:
+    msg: time_synchronization must be either ntp or chrony
+  when: time_synchronization not in ["ntp", "chrony"]
+
+# 2.1.1.1 Ensure time synchronization is in use
+
+- name: 2.1.1.1 - Ensure time synchronization is in use (ntp)
+  ansible.builtin.package:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  when: time_synchronization == "ntp"
+  with_items:
+    - { name: ntp, state: present }
+    - { name: chrony, state: absent }
+  tags:
+    - level-1
+    - 2.1.1.1
+    - manual
+
+- name: 2.1.1.1 - Ensure time synchronization is in use (chrony)
+  ansible.builtin.package:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  when: time_synchronization == "chrony"
+  with_items:
+    - { name: ntp, state: absent }
+    - { name: chrony, state: present }
+  tags:
+    - level-1
+    - 2.1.1.1
+    - manual
+
+# 2.1.1.2 Ensure chrony is configured
+
+- name: 2.1.1.2 Ensure chrony is configured
+  ansible.builtin.replace:
+    regexp: ^(OPTIONS=.*)\"$
+    replace: \1 -u chrony"
+    dest: /etc/sysconfig/chronyd
+  when: time_synchronization == "chrony"
+  tags:
+    - level-1
+    - 2.1.1.2
+    - automated
+
+- name: 2.1.1.2 Ensure chrony is configured
+  ansible.builtin.copy:
+    src: chrony.conf
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: time_synchronization == "chrony"
+  tags:
+    - level-1
+    - 2.1.1.2
+    - automated
+
+- name: Set SELinux permissive for chronyc
+  ansible.builtin.shell: semanage permissive -a chronyc_t
+  when: time_synchronization == "chrony"
+  tags:
+    - level-1
+    - 2.1.1.2
+    - automated
+    - ignore_on_docker
+    - skip_ansible_lint
+
+# 2.1.1.3 Ensure ntp is configured
+
+- name: 2.1.1.3 Ensure ntp is configured - Set Restrict -6
+  ansible.builtin.lineinfile:
+    path: /etc/ntp.conf
+    insertbefore: restrict default nomodify notrap nopeer noquery
+    line: restrict -6 default kod nomodify notrap nopeer noquery
+  when: time_synchronization == "ntp"
+  tags:
+    - level-1
+    - 2.1.1.3
+    - automated
+
+- name: 2.1.1.3 Ensure ntp is configured - Set Restrict -4
+  ansible.builtin.lineinfile:
+    path: /etc/ntp.conf
+    insertbefore: restrict -6 default kod nomodify notrap nopeer noquery
+    line: restrict -4 default kod nomodify notrap nopeer noquery
+  when: time_synchronization == "ntp"
+  tags:
+    - level-1
+    - 2.1.1.3
+    - automated
+
+ # add server to ntp.conf
+- name: 2.1.1.3 Ensure ntp is configured - Add server to ntp.conf
+  ansible.builtin.lineinfile:
+    path: /etc/ntp.conf
+    insertafter: restrict -6 default kod nomodify notrap nopeer noquery
+    line: server {{ time_server }} prefer iburst minpoll 4 maxpoll 4
+  when: time_synchronization == "ntp"
+  tags:
+    - level-1
+    - 2.1.1.3
+    - automated
+
+- name: 2.1.1.3 Ensure ntp is configured
+  ansible.builtin.replace:
+    path: /etc/sysconfig/ntpd
+    regexp: ^OPTIONS=.*$
+    replace: OPTIONS="-u ntp:ntp"
+  when: time_synchronization == "ntp"
+  notify: Reload systemd
+  tags:
+    - level-1
+    - 2.1.1.3
+    - automated
+
+- name: 2.1.1.3 Ensure ntp is configured
+  ansible.builtin.systemd:
+    name: ntpd
+    enabled: true
+    state: restarted
+  when: time_synchronization == "ntp"
+
+# 2.1.2 Ensure X11 Server components are not installed
+
+- name: 2.1.2 - Ensure X11 Server components are not installed
+  ansible.builtin.yum:
+    name: xorg-x11-server*
+    state: absent
+  tags:
+    - level-1
+    - 2.1.2
+    - automated
+
+# 2.1.3 Ensure Avahi Server is not installed
+
+- name: 2.1.3 - Ensure Avahi Server is not installed
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  with_items:
+    - avahi-daemon.socket
+    - avahi-daemon.service
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.3
+    - automated
+
+- name: 2.1.3 - Ensure Avahi Server is not installed
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - avahi-autoipd
+    - avahi
+  tags:
+    - level-1
+    - 2.1.3
+    - automated
+
+# 2.1.4 Ensure CUPS is not installed
+
+- name: 2.1.4 - Ensure CUPS is not installed
+  ansible.builtin.yum:
+    name: cups
+    state: absent
+  tags:
+    - level-1
+    - 2.1.4
+    - automated
+
+# 2.1.5 Ensure DHCP Server is not installed
+
+- name: 2.1.5 - Ensure DHCP Server is not installed
+  ansible.builtin.yum:
+    name: dhcpd
+    state: absent
+  tags:
+    - level-1
+    - 2.1.5
+    - automated
+
+# 2.1.6 Ensure LDAP server is not installed
+
+- name: 2.1.6 - Ensure LDAP server is not installed
+  ansible.builtin.yum:
+    name: openldap-servers
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.6
+    - automated
+
+# 2.1.7 Ensure DNS Server is not installed
+
+- name: 2.1.7 - Ensure DNS Server is not installed
+  ansible.builtin.yum:
+    name: bind
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.7
+    - automated
+
+# 2.1.8 Ensure FTP Server is not installed
+
+- name: 2.1.8 - Ensure FTP Server is not installed
+  ansible.builtin.yum:
+    name: vsftpd
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.8
+    - automated
+
+# 2.1.9 Ensure HTTP server is not installed
+
+- name: 2.1.9 - Ensure HTTP server is not installed
+  ansible.builtin.yum:
+    name: httpd
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.9
+    - automated
+
+# 2.1.10 Ensure IMAP and POP3 server is not installed
+
+- name: 2.1.10 - Ensure IMAP and POP3 server is not installed
+  ansible.builtin.yum:
+    name: dovecot
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.10
+    - automated
+
+# 2.1.11 Ensure Samba is not installed
+
+- name: 2.1.11 - Ensure Samba is not installed
+  ansible.builtin.yum:
+    name: samba
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.11
+    - automated
+
+# 2.1.12 Ensure HTTP Proxy Server is not installed
+
+- name: 2.1.12 - Ensure HTTP Proxy Server is not installed
+  ansible.builtin.yum:
+    name: squid
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.12
+    - automated
+
+# 2.1.13 Ensure net-snmp is not installed
+
+- name: 2.1.13 - Ensure net-snmp is not installed
+  ansible.builtin.yum:
+    name: net-snmp
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.13
+    - automated
+
+# 2.1.14 Ensure NIS server is not installed
+
+- name: 2.1.14 - Ensure NIS server is not installed
+  ansible.builtin.yum:
+    name: ypserv
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.14
+    - automated
+
+# 2.1.15 Ensure telnet-server is not installed
+
+- name: 2.1.15 - Ensure telnet-server is not installed
+  ansible.builtin.yum:
+    name: telnet-server
+    state: absent
+  ignore_errors: true
+  tags:
+    - level-1
+    - 2.1.15
+    - automated
+
+# 2.1.16 Ensure mail transfer agent is configured for local-only mode
+
+- name: 2.1.16 - Ensure mail transfer agent is configured for local-only mode
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: ^inet_interfaces =.*$
+    line: inet_interfaces = loopback-only
+  tags:
+    - level-1
+    - 2.1.16
+    - automated
+    - ignore_on_docker
+
+- name: 2.1.16 - Ensure mail transfer agent is configured for local-only mode
+  ansible.builtin.systemd:
+    name: postfix
+    state: restarted
+  tags:
+    - level-1
+    - 2.1.16
+    - automated
+    - ignore_on_docker
+
+# 2.1.17 Ensure nfs-utils is not installed or the nfs-server service is masked
+
+- name: 2.1.17 - Ensure nfs-utils is not installed or the nfs-server service is masked
+  ansible.builtin.yum:
+    name: nfs-utils
+    state: absent
+  ignore_errors: true
+  when: nfs_state == "nfs_utils_absent"
+  tags:
+    - level-1
+    - 2.1.17
+    - automated
+
+- name: 2.1.17 - Ensure nfs-utils is not installed or the nfs-server service is masked
+  ansible.builtin.systemd:
+    name: nfs-server
+    masked: true
+  ignore_errors: true
+  when: nfs_state == "nfs_server_masked"
+  tags:
+    - level-1
+    - 2.1.17
+    - automated
+
+# 2.1.18 Ensure rpcbind is not installed or the rpcbind services are masked
+
+- name: 2.1.18 - Ensure rpcbind is not installed or the rpcbind services are masked
+  ansible.builtin.yum:
+    name: rpcbind
+    state: absent
+  ignore_errors: true
+  when: rpcbind_state == "rpcbind_absent"
+  tags:
+    - level-1
+    - 2.1.18
+    - automated
+
+- name: 2.1.18 - Ensure rpcbind is not installed or the rpcbind services are masked
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    masked: true
+  ignore_errors: true
+  with_items:
+    - rpcbind
+    - rpcbind.socket
+  when: rpcbind_state == "rpcbind_masked"
+  tags:
+    - level-1
+    - 2.1.18
+    - automated
+
+# 2.1.19 Ensure rsync is not installed or the rsyncd service is masked
+
+- name: 2.1.19 - Ensure rsync is not installed or the rsyncd service is masked
+  ansible.builtin.yum:
+    name: rsync
+    state: absent
+  ignore_errors: true
+  when: rsync_state == "rsync_absent"
+  tags:
+    - level-1
+    - 2.1.19
+    - automated
+
+- name: 2.1.19 - Ensure rsync is not installed or the rsyncd service is masked
+  ansible.builtin.systemd:
+    name: rsyncd
+    masked: true
+  ignore_errors: true
+  when: rsync_state == "rsync_masked"
+  tags:
+    - level-1
+    - 2.1.19
+    - automated

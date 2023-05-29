@@ -1,0 +1,6 @@
+---
+# ops-users.yml is included in 5-access-auth-autorization/tasks/5-2.yml
+# - ansible.builtin.include_tasks: "ops-users.yml"
+- ansible.builtin.include_tasks: cloudwatch-agent.yml
+- ansible.builtin.include_tasks: session-manager.yml
+- ansible.builtin.include_tasks: ossec.yml

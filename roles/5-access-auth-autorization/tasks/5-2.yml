@@ -1,0 +1,41 @@
+---
+# 5.2 Configure sudo
+
+# 5.2.1 Ensure sudo is installed
+- name: 5.2.1 - Ensure sudo is installed
+  ansible.builtin.yum:
+    name: sudo
+    state: present
+  tags:
+    - level-1
+    - 5.2.1
+    - automated
+
+- name: Configure sudoers for Admin users
+  ansible.builtin.include_role:
+    name: custom
+    tasks_from: admin-users
+
+# 5.2.2 Ensure sudo commands use pty
+- name: 5.2.2 - Ensure sudo commands use pty
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: Defaults\s+use_pty
+    line: Defaults    use_pty
+    state: present
+  tags:
+    - level-1
+    - 5.2.2
+    - automated
+
+# 5.2.3 Ensure sudo log file exists
+- name: 5.2.3 - Ensure sudo log file exists
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: Defaults\s+logfile
+    line: Defaults    logfile="/var/log/sudo"
+    state: present
+  tags:
+    - level-1
+    - 5.2.3
+    - automated

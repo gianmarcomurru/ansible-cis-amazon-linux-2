@@ -1,0 +1,7 @@
+---
+
+# 6 Docker Security Operations
+
+# 6.1 Ensure that image sprawl is avoided
+# 6.2 Ensure that container sprawl is avoided
+# These rules are not applicable as Amazon ECS manages these settings

@@ -1,0 +1,21 @@
+---
+- name: Setup ECS instance
+  hosts: all
+  become: true
+  vars_files:
+    - defaults/vars.yml
+    - defaults/users.yml
+  handlers:
+    - name: Import handlers
+      ansible.builtin.import_tasks: handlers/main.yml
+  roles:
+    - role: common
+    - role: 1-setup
+    - role: 2-services
+    - role: 3-network
+    - role: 5-access-auth-autorization
+    - role: 6-sys-maintenance
+    - role: custom
+    - role: docker
+      when: instance_type == "docker"
+    - role: final

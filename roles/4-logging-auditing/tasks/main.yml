@@ -1,0 +1,6 @@
+---
+
+# 4 Logging and Auditing
+
+# This section is not applicable since Reepay uses
+# Ossec and AWS CloudWatch for logging and auditing

@@ -1,0 +1,27 @@
+---
+
+- name: Autoremove
+  ansible.builtin.yum:
+    autoremove: true
+
+- name: Upgrade all packages to the latest version
+  ansible.builtin.yum:
+    name: "*"
+    state: latest
+    update_only: true
+
+- name: Install custom packages
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ custom_packages }}"
+
+- name: Set LANG and LC_ALL
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - { regexp: ^LANG=, line: LANG=en_US.UTF-8 }
+    - { regexp: ^LC_ALL=, line: LC_ALL=en_US.UTF-8 }

@@ -1,0 +1,74 @@
+---
+# 5 Container Runtime Configuration
+
+# 5.1 Ensure that, if applicable, an AppArmor Profile is enabled
+# Not applicable as we use SElinux
+
+- name: 5.2 Ensure that, if applicable, SELinux security options are set
+  ansible.builtin.shell: >
+    set -o pipefail && docker ps --quiet --all | xargs docker inspect --format "'\{\{ .Id \}\}:
+    SecurityOpt=\{\{ .HostConfig.SecurityOpt \}\} MountLabel=\{\{ .MountLabel \}\}
+    ProcessLabel=\{\{.ProcessLabel \}\}\'"
+  register: docker_security_options
+  tags:
+    - ignore_on_docker
+
+- name: 5.2 Ensure that, if applicable, SELinux security options are set
+  ansible.builtin.fail:
+    msg: |
+      Check SELinux security options
+      {{ docker_security_options.stdout }}
+  ignore_errors: true
+  when: >
+    ProcessLabel not in docker_security_options.stdout and
+    MountLabel not in docker_security_options.stdout and
+    SecurityOpt not in docker_security_options.stdout
+  tags:
+    - ignore_on_docker
+
+# 5.3 Ensure that Linux kernel capabilities are restricted within containers
+# 5.4 Ensure that privileged containers are not used
+# 5.5 Ensure sensitive host system directories are not mounted on containers
+# 5.7 Ensure privileged ports are not mapped within containers
+# 5.8 Ensure that only needed ports are open on the container
+# 5.9 Ensure that the host's network namespace is not shared
+# 5.10 Ensure that the memory usage for containers is limited
+# 5.11 Ensure that CPU priority is set appropriately on containers
+# 5.12 Ensure that the container's root filesystem is mounted as read only
+# 5.15 Ensure that the host's process namespace is not shared
+# 5.16 Ensure that the host's IPC namespace is not shared
+# 5.17 Ensure that host devices are not directly exposed to containers
+# 5.18 Ensure that the default ulimit is overwritten at runtime if needed
+# 5.21 Ensure the default seccomp profile is not Disabled
+# 5.22 Ensure that docker exec commands are not used with the privileged option
+# 5.27 Ensure that Docker commands always make use of the latest version of their image
+# This is applied in the ECS Task Definition
+
+# 5.6 Ensure sshd is not run within containers
+# Ensured in fintech_company/docker-base-java
+
+# 5.13 Ensure that incoming container traffic is bound to a specific host interface
+# This is applied in the ECS Task Definition, networking is then managed by AWS through the ELB
+
+# 5.14 Ensure that the 'on-failure' container restart policy is set to '5'
+# 5.26 Ensure that container health is checked at runtime
+# 5.28 Ensure that the PIDs cgroup limit is used
+# This is managed by AWS ECS
+
+# 5.19 Ensure mount propagation mode is not set to shared
+# Not applicable as we do not use volumes
+
+# 5.20 Ensure that the host's UTS namespace is not shared
+# 5.24 Ensure that cgroup usage is confirmed
+# 5.30 Ensure that the host's user namespaces are not shared
+# 5.31 Ensure that the Docker socket is not mounted inside any containers
+# Not applicable as AWS ECS runs the containers in a managed environment
+
+# 5.23 Ensure that docker exec commands are not used with the user=root option
+# This is applied in the ECS Task Definition
+
+# 5.25 Ensure that the container is restricted from acquiring additional privileges
+# Implemented in docker daemon configuration (daemon.json)
+
+# 5.29 Ensure that Docker's default bridge "docker0" is not used
+# In AWS ECS, the default bridge is not docker0

@@ -1,0 +1,15 @@
+# Do not move this variable to other files
+# Update using the following command:
+# make password_update
+
+sudoers:
+  # Field password must start with $6
+- name: admin # Changed on April 13, 2023
+  password: $6$aqfWeKPz$WLDL9mSe52BSckWL/JN66LDE4mfKoOyfv1kwEOHJVq4Oq4q0nvOD76o824FvFc9/FVBVQXXdH.BYUgq8XR82m1
+  password_last_change: "19460"   # !! Change this every time you change the password
+- name: admin2 # Changed on April 13, 2023
+  password: $6$mdWAJCev$LcE.cPnqAbQYAaCMXk.x8eYFwOt2VHGPWaF7g/Y2Lxh5WEIhUIFRcoSAJTGvCHznAX21.N9g6cbkCOmcWImkD1
+  password_last_change: "19460"   # !! Change this every time you change the password
+- name: admin3 # Changed on April 13, 2023
+  password: $6$L4rumy66$3GU0tlAQlEsfjxsFPd/G3qL1kfwKyrb3v4Pz8GyrYjOsTaD5LItapGSsWNKrl7ifS2lZ99arrPgKqfbrz/RhO.
+  password_last_change: "19460"   # !! Change this every time you change the password

@@ -1,0 +1,20 @@
+<group name="local,syslog,">
+
+  <rule id="100100" level="0">
+    <if_sid>531</if_sid>
+    <regex>'df -h':\s+/dev/loop\d+</regex>
+    <description>Ignore full snap loop devices</description>
+  </rule>
+
+  <rule id="100001" level="0">
+    <if_sid>591</if_sid>
+    <description>Ignore log File rotated alerts. All logs are streamed already.</description>
+  </rule>
+
+  <rule id="554" level="7" overwrite="yes">
+    <category>ossec</category>
+    <decoded_as>syscheck_new_entry</decoded_as>
+    <description>File added to the system.</description>
+    <group>syscheck,</group>
+  </rule>
+</group>

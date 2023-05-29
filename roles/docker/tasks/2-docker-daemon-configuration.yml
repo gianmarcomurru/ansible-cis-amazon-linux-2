@@ -1,0 +1,66 @@
+---
+# 2.1 Run the Docker daemon as a non-root user, if possible
+# As we are using AWS ECS, this latter control Docker daemon and it use root user.
+# However, we ensure that only ops user have sudo privileges, and we prevent any user to login/become root.
+
+# 2.2 Ensure network traffic is restricted between containers on the default bridge
+# AWS manage the network traffic between containers
+
+- name: |-
+    Ensure Docker daemon is configured, applicable for:
+    - 2.3 Ensure the logging level is set to 'info'
+    - 2.4 Ensure Docker is allowed to make changes to iptables
+    - 2.5 Ensure insecure registries are not used
+    - 2.6 Ensure aufs storage driver is not used
+    - 2.10 Ensure the default cgroup usage has been confirmed
+    - 2.12 Ensure authorization for Docker client commands is enabled
+    - 2.13 Ensure centralized and remote logging is configured
+    - 2.14 Ensure containers are restricted from acquiring new privileges
+    - 2.15 Ensure live restore is enabled
+    - 2.16 Ensure Userland Proxy is Disabled
+  ansible.builtin.copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Docker
+
+- name: 2.6 Ensure aufs storage driver is not used
+  ansible.builtin.command: docker info --format "{{ '{{' }}.Driver{{ '}}' }}"
+  register: docker_storage_driver
+  failed_when: docker_storage_driver.stdout == "aufs"
+
+# 2.7 Ensure TLS authentication for Docker daemon is configured
+# We do not expose the Docker daemon via a network socket
+
+- name: 2.8 Ensure the default ulimit is configured appropriately
+  ansible.builtin.command: grep -E '(--default-ulimit\s\w+=[0-9]+:[0-9]+)' /etc/sysconfig/docker
+  register: docker_ulimit
+
+- name: 2.8 Ensure the default ulimit is configured appropriately
+  ansible.builtin.debug:
+    msg: "Check the default ulimit is configured appropriately: {{ docker_ulimit.stdout }}"
+
+# Not applicable since we let ECS manage Docker
+# 2.9 Enable user namespace support
+
+- name: 2.10 Ensure the default cgroup usage has been confirmed
+  ansible.builtin.shell: >
+    set -o pipefail && ps -ef | grep dockerd
+  register: docker_cgroup
+  failed_when: "'--cgroup-parent' in docker_cgroup.stdout"
+
+- name: 2.11 Ensure base device size is not changed until needed
+  ansible.builtin.shell: >
+    set -o pipefail && ps -ef | grep dockerd
+  register: docker_base_size
+  failed_when: "'--storage-opt' in docker_base_size.stdout"
+
+# 2.17 Ensure that a daemon-wide custom seccomp profile is applied if appropriate
+# Ignored: Docker's default profile is adequate for our environment
+
+- name: 2.18 Ensure that experimental features are not implemented in production
+  ansible.builtin.command: docker info --format "{{ '{{' }}.Server.Experimental{{ '}}' }}"
+  register: docker_experimental
+  failed_when: docker_experimental.stdout == "true"

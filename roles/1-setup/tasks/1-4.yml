@@ -1,0 +1,71 @@
+---
+# 1.4.1 Ensure permissions on bootloader config are configured
+
+- name: 1.4.1 - Check if grub bootloader file exists
+  ansible.builtin.stat:
+    path: /boot/grub2/grub.cfg
+  register: grub_1_4_1
+  tags:
+    - level-1
+    - 1.4.1
+    - automated
+
+- name: 1.4.1 - Check if EFI grub bootloader file exists
+  ansible.builtin.stat:
+    path: /boot/efi/EFI/amzn/grub.cfg
+  register: grub_1_4_1_efi
+  tags:
+    - level-1
+    - 1.4.1
+    - automated
+
+- name: 1.4.1 - Set permissions on grub configuration
+  ansible.builtin.file:
+    path: /boot/grub2/grub.cfg
+    owner: root
+    group: root
+    mode: og-rwx
+    state: file
+  when: grub_1_4_1.stat.exists
+  tags:
+    - level-1
+    - 1.4.1
+    - automated
+
+- name: 1.4.1 - Set permissions on EFI grub configuration
+  ansible.builtin.file:
+    path: /boot/efi/EFI/amzn/grub.cfg
+    owner: root
+    group: root
+    mode: og-rwx
+    state: file
+  when: grub_1_4_1_efi.stat.exists
+  tags:
+    - level-1
+    - 1.4.1
+    - automated
+
+# 1.4.2 - Ensure authentication is required for single user mode
+
+- name: 1.4.2 - Check if rescue.service and emergency.service both use /sbin/sulogin for ExecStart
+  ansible.builtin.command: grep /sbin/sulogin /usr/lib/systemd/system/rescue.service /usr/lib/systemd/system/emergency.service
+  register: line_matched
+  ignore_errors: true
+  tags:
+    - level-1
+    - 1.4.2
+    - automated
+
+- name: 1.4.2 - Ensure authentication is required for single user mode
+  ansible.builtin.lineinfile:
+    dest: /usr/lib/systemd/system/{{ item }}.service
+    regexp: ^ExecStart=
+    line: ExecStart=-/bin/sh -c "/usr/sbin/sulogin; /usr/bin/systemctl --fail --no-block default"
+  when: line_matched.rc != 0
+  with_items:
+    - rescue
+    - emergency
+  tags:
+    - level-1
+    - 1.4.2
+    - automated

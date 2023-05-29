@@ -1,0 +1,67 @@
+---
+
+- name: Check if Session Manager is installed
+  ansible.builtin.shell: >
+    set -o pipefail && rpm -qa | grep amazon-ssm-agent
+  register: session_manager_installed
+  changed_when: false
+  ignore_errors: true
+  tags:
+    - session-manager
+
+- name: Get architecture
+  ansible.builtin.command: uname -m
+  register: architecture
+  changed_when: false
+  when: session_manager_installed.rc == 1
+  tags:
+    - session-manager
+
+- name: Print architecture
+  ansible.builtin.debug:
+    msg: "{{ architecture.stdout }}"
+  when: session_manager_installed.rc == 1
+  tags:
+    - session-manager
+
+- name: Set architecture
+  ansible.builtin.set_fact:
+    architecture: arm64
+    arch_set: true
+  when: session_manager_installed.rc == 1 and architecture.stdout == "aarch64"
+  tags:
+    - session-manager
+
+- name: Set architecture
+  ansible.builtin.set_fact:
+    architecture: amd64
+  when: session_manager_installed.rc == 1 and arch_set is not defined and architecture.stdout == "x86_64"
+  tags:
+    - session-manager
+
+- name: Install Session Manager
+  ansible.builtin.yum:
+    name: https://s3.{{ region }}.amazonaws.com/amazon-ssm-{{ region }}/latest/linux_{{ architecture }}/amazon-ssm-agent.rpm
+    state: installed
+  when: session_manager_installed.rc == 1
+  tags:
+    - session-manager
+
+- name: Copy /etc/amazon/ssm/seelog.xml
+  ansible.builtin.copy:
+    src: seelog.xml
+    dest: /etc/amazon/ssm/seelog.xml
+    owner: root
+    group: root
+    mode: "0644"
+  when: session_manager_installed.rc == 1
+  tags:
+    - session-manager
+
+- name: Enable Session Manager
+  ansible.builtin.service:
+    name: amazon-ssm-agent
+    state: started
+    enabled: true
+  tags:
+    - session-manager

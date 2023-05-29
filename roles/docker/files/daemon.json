@@ -1,0 +1,13 @@
+{
+    "storage-driver": "overlay2",
+    "icc": false,
+    "log-level": "info",
+    "log-driver": "syslog",
+    "iptables": true,
+    "userland-proxy": false,
+    "live-restore": true,
+    "no-new-privileges": true,
+    "cgroup-parent": "",
+    "authorization-plugins": [],
+    "insecure-registries" : []
+}

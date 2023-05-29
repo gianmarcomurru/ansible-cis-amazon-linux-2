@@ -1,0 +1,32 @@
+---
+
+- name: Remove SSH service from firewalld
+  ansible.posix.firewalld:
+    service: ssh
+    permanent: true
+    state: disabled
+  vars:
+    ansible_python_interpreter: /usr/bin/python
+  tags:
+    - ssh
+    - ignore_on_docker
+
+- name: Flush handlers before removing ssh
+  ansible.builtin.meta: flush_handlers
+  tags:
+    - ssh
+
+- name: Disable  and stop sshd
+  ansible.builtin.service:
+    name: sshd
+    enabled: false
+    state: stopped
+  tags:
+    - ssh
+
+- name: Remove SSH server
+  ansible.builtin.yum:
+    name: openssh-server
+    state: absent
+  tags:
+    - ssh

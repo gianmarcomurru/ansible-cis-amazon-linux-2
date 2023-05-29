@@ -1,0 +1,73 @@
+---
+### Configuration
+
+# The minimum number of required classes of characters for the new password
+# is set to have all digits, uppercase, lowercase and others. See 5.4.1 for more information.
+password_min_len: 14 # 14 or higher
+password_expire_min: 7 # 7 or higher
+password_expire_max: 90 # 90 or lower
+password_expire_warning: 7 # 1 or higher
+password_expire_inactive: 30 # 30 or lower
+default_user_shell_timeout: 900 # 0 | 900 or lower
+
+ossec_version: 3.7.0
+
+region: eu-west-1
+
+custom_packages:
+  - nc
+
+### CIS Amazon Linux 2 Benchmark
+
+# Whether to fail when remediation items are found for recommendations which can't be automatically fixed.
+# If false, a debug message will be generated instead, with the preface *** ACTION REQUIRED ***..
+fail_on_manual_remediation_actions: true # true or false.
+
+# Choose which time synchronization package should be installed. Valid values are [chrony | ntp].
+time_synchronization: chrony
+time_server: 169.254.169.123
+
+# 2.1.17 Ensure nfs-utils is not installed or the nfs-server service is masked
+# Valid values are [nfs_utils_absent | nfs_server_masked]
+nfs_state: nfs_utils_absent
+
+# 2.1.18 Ensure rpcbind is not installed or the rpcbind services are masked
+# Valid values are [rpcbind_absent | rpcbind_masked]
+rpcbind_state: rpcbind_absent
+
+# 2.1.19 - Ensure rsync is not installed or the rsyncd service is masked
+# Valid values are [rsync_absent | rsyncd_masked]
+rsync_state: rsync_absent
+
+# 3.2 and 3.3 - Will your machine used as Host or Host and Router?
+#
+# 3.2 Network Parameters (Host Only)
+# The following network parameters are intended for use if the system
+# is to act as a host only. A system is considered host only if the system
+# has a single interface, or has multiple interfaces but will not be configured as a router.
+#
+# 3.3 Network Parameters (Host and Router)
+# The following network parameters are intended for use on both host only
+# and router systems. A system acts as a router if it has at least two
+# interfaces and is configured to perform routing functions.
+#
+# Valid values are [host_only | host_and_router]
+network_params: host_only
+
+# Valid values are [iptables | firewalld ]
+firewall: firewalld
+
+# 3.5.1.3 Ensure nftables either not installed or masked with firewalld
+# Valid values are [nftables_absent | nftablesd_masked]
+nftables_state: nftables_absent
+
+# 3.5.3.1.3 Ensure firewalld is either not installed or masked with iptables
+# Valid values are [firewalld_absent | firewalld_masked]
+firewalld_state: firewalld_absent
+
+# 4.1.2.1 Ensure audit log storage size is configured
+# Configure the maximum size of the audit log file in MB
+auditd_max_log_file: 20
+
+# 5.5.5 Ensure default user umask is configured
+default_umask: "027"

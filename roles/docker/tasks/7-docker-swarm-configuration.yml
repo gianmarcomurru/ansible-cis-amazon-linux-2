@@ -1,0 +1,8 @@
+---
+# 7 Docker Swarm Configuration
+
+- name: 7.1 Ensure swarm mode is not Enabled, if not needed
+  ansible.builtin.command: docker swarm leave --force
+  ignore_errors: true
+
+# Every other rule in this section is ignored, because we don't use swarm mode

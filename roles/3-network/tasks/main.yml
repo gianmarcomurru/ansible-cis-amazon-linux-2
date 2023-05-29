@@ -1,0 +1,15 @@
+---
+# 3 Network Configuration
+
+- ansible.builtin.include_tasks: 3-1.yml
+- ansible.builtin.include_tasks: 3-2.yml
+  when: network_params == "host_only"
+- ansible.builtin.include_tasks: 3-3.yml
+  when: network_params == "host_and_router"
+- ansible.builtin.include_tasks: 3-4.yml
+- ansible.builtin.include_tasks: 3-5-1.yml
+  when: firewall == "firewalld"
+- ansible.builtin.include_tasks: 3-5-2.yml
+  when: firewall == "nftables"
+- ansible.builtin.include_tasks: 3-5-3.yml
+  when: firewall == "iptables"

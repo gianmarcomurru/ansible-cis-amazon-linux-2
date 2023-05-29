@@ -1,0 +1,6 @@
+---
+
+# 5.3 Configure SSH Server
+
+# This is not applicable since we do not use SSH for access to the servers
+# Go to ../reepay/ssh

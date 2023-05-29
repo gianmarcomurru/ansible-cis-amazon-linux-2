@@ -1,0 +1,30 @@
+---
+name: Pull request pipeline
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  require-issue-key-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+  validate:
+    runs-on: [self-hosted, X64]
+    steps:
+      - uses: actions/checkout@v3
+      - run: make check
+      - run: make lint
+
+  test_build:
+    runs-on: [self-hosted, X64]
+    steps:
+      - uses: actions/checkout@v3
+      - run: make docker

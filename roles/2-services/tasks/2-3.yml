@@ -1,0 +1,22 @@
+---
+# 2.3 Ensure nonessential services are removed or masked
+
+- name: 2.3 - Ensure chargen services are not enabled
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    lsof -i -P -n | grep -v "(ESTABLISHED)" | cut -f -1 -d " " | sort | uniq | grep -v "COMMAND"
+  register: chargen_services
+  tags:
+    - level-1
+    - "2.3"
+    - manual
+    - ignore_on_docker
+
+- name: 2.3 - Ensure chargen services are not enabled
+  ansible.builtin.debug:
+    msg: "*** ACTION REQUIRED *** There might be chargen services to remove or mask: {{ chargen_services.stdout_lines }}"
+  tags:
+    - level-1
+    - "2.3"
+    - manual
+    - ignore_on_docker

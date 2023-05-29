@@ -1,0 +1,102 @@
+---
+- name: Install Ossec dependencies
+  ansible.builtin.yum:
+    name:
+      - zlib-devel
+      - pcre2-devel
+      - make
+      - gcc
+      - sqlite-devel
+      - openssl-devel
+      - libevent-devel
+      - systemd-devel
+    state: installed
+  tags:
+    - ossec
+
+- name: Download ossec-hids
+  ansible.builtin.get_url:
+    url: https://github.com/ossec/ossec-hids/archive/{{ ossec_version }}.tar.gz
+    dest: /root/ossec-hids-{{ ossec_version }}.tar.gz
+    headers:
+      Accept: application/octet-stream
+    owner: root
+    group: root
+    mode: "0644"
+  tags:
+    - ossec
+
+- name: Extract ossec-hids
+  ansible.builtin.unarchive:
+    src: /root/ossec-hids-{{ ossec_version }}.tar.gz
+    dest: /root
+    remote_src: true
+  tags:
+    - ossec
+
+- name: Copy preloaded-vars.conf to ossec-hids
+  ansible.builtin.copy:
+    src: ossec/preloaded-vars.conf
+    dest: /root/ossec-hids-{{ ossec_version }}/etc/preloaded-vars.conf
+    owner: root
+    group: root
+    mode: "0644"
+  tags:
+    - ossec
+
+- name: Copy ossec service to ossec-hids
+  ansible.builtin.copy:
+    src: ossec/ossec.service
+    dest: /usr/lib/systemd/system/ossec.service
+    owner: root
+    group: root
+    mode: "0644"
+  tags:
+    - ossec
+
+- name: Install ossec-hids from install.sh script
+  ansible.builtin.command: ./install.sh
+  args:
+    chdir: /root/ossec-hids-{{ ossec_version }}
+  register: my_output
+  changed_when: my_output.rc != 0
+  tags:
+    - ossec
+
+- name: Copy ossec.conf to ossec-hids
+  ansible.builtin.copy:
+    src: ossec/ossec.conf
+    dest: /var/ossec/etc/ossec.conf
+    owner: root
+    group: ossec
+    mode: "0640"
+  tags:
+    - ossec
+
+- name: Copy local_rules.xml to ossec-hids
+  ansible.builtin.copy:
+    src: ossec/local_rules.xml
+    dest: /var/ossec/rules/local_rules.xml
+    owner: root
+    group: ossec
+    mode: "0640"
+  tags:
+    - ossec
+
+- name: Start Ossec
+  ansible.builtin.command: /var/ossec/bin/ossec-control start
+  tags:
+    - ossec
+
+- name: Enable Ossec
+  ansible.builtin.systemd:
+    name: ossec
+    state: restarted
+    enabled: true
+
+- name: Cleanup ossec-hids
+  ansible.builtin.file:
+    path: /root/ossec-hids-{{ ossec_version }}*
+    state: absent
+  tags:
+    - ossec

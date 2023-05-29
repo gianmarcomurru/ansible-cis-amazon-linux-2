@@ -1,0 +1,32 @@
+# Standards: 0.11
+---
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart rsyslog
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
+
+- name: Restart auditd
+  ansible.builtin.service:
+    name: auditd
+    state: restarted
+
+- name: Reconfigure GRUB
+  ansible.builtin.command: grub2-mkconfig -o /boot/grub2/grub.cfg
+
+- name: Generate auditd rules
+  ansible.builtin.command: /usr/sbin/augenrules
+
+- name: Restart Docker
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+
+- name: Restart crond
+  ansible.builtin.service:
+    name: crond
+    state: restarted

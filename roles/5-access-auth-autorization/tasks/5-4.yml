@@ -1,0 +1,149 @@
+---
+# 5.4 Configure PAM
+
+# 5.4.1 Ensure password creation requirements are configured
+- name: 5.4.1 - Ensure password creation requirements are configured
+  ansible.builtin.lineinfile:
+    path: /etc/security/pwquality.conf
+    regexp: ^{{ item.key }}
+    line: "{{ item.key }} = {{ item.value }}"
+    state: present
+  with_items:
+    - { key: minclass, value: "4" }
+    - { key: minlen, value: '{{ password_min_len if password_min_len >= 14 else "14" }}' }
+  tags:
+    - level-1
+    - 5.4.1
+    - automated
+
+- name: 5.4.1 - Ensure password creation requirements are configured
+  community.general.pamd:
+    name: "{{ item }}"
+    control: requisite
+    type: password
+    module_path: pam_pwquality.so
+    module_arguments: try_first_pass retry=3
+    state: args_present
+  with_items:
+    - password-auth
+    - system-auth
+  tags:
+    - level-1
+    - 5.4.1
+    - automated
+
+# 5.4.2 Ensure lockout for failed password attempts is configured
+- name: 5.4.2 - Ensure lockout for failed password attempts is configured
+  community.general.pamd:
+    name: "{{ item.name }}"
+    type: auth
+    control: required
+    module_path: "{{ item.module_path }}"
+    new_type: auth
+    new_control: "{{ item.new_control }}"
+    new_module_path: pam_faillock.so
+    module_arguments: "{{ item.module_arguments }}"
+    state: "{{ item.state }}"
+  with_items:
+    - name: system-auth
+      module_path: pam_env.so
+      new_control: required
+      module_arguments: preauth silent audit deny=5 unlock_time=900
+      state: after
+    - name: system-auth
+      module_path: pam_deny.so
+      new_control: "[default=die]"
+      module_arguments: authfail audit deny=5 unlock_time=900
+      state: before
+    - name: password-auth
+      module_path: pam_env.so
+      new_control: required
+      module_arguments: preauth silent audit deny=5 unlock_time=900
+      state: after
+    - name: password-auth
+      module_path: pam_deny.so
+      new_control: "[default=die]"
+      module_arguments: authfail audit deny=5 unlock_time=900
+      state: before
+  tags:
+    - level-1
+    - 5.4.2
+    - automated
+
+- name: 5.4.2 - Ensure lockout for failed password attempts is configured
+  community.general.pamd:
+    name: "{{ item.name }}"
+    type: account
+    control: required
+    module_path: pam_unix.so
+    new_type: account
+    new_control: required
+    new_module_path: pam_faillock.so
+    state: before
+  with_items:
+    - name: system-auth
+    - name: password-auth
+  tags:
+    - level-1
+    - 5.4.2
+    - automated
+
+# 5.4.3 Ensure password hashing algorithm is SHA-512
+- name: 5.4.3 - Ensure password hashing algorithm is SHA-512
+  community.general.pamd:
+    name: "{{ item.name }}"
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments: "{{ item.module_arguments }}"
+    state: "{{ item.state }}"
+  with_items:
+    - name: system-auth
+      module_arguments: sha512
+      state: args_present
+    - name: password-auth
+      module_arguments: sha512
+      state: args_present
+    - name: system-auth
+      module_arguments: md5
+      state: args_absent
+    - name: password-auth
+      module_arguments: md5
+      state: args_absent
+  tags:
+    - level-1
+    - 5.4.3
+    - automated
+
+# 5.4.4 Ensure password reuse is limited
+- name: 5.4.4 - Ensure password reuse is limited
+  ansible.builtin.shell: >
+    set -o pipefail && grep -m 1 -E '^password.*requisite'
+    /etc/pam.d/system-auth /etc/pam.d/password-auth |
+    awk '{print $3}'
+  register: module_path
+  tags:
+    - level-1
+    - 5.4.4
+    - automated
+
+- name: 5.4.4 - Ensure password reuse is limited
+  community.general.pamd:
+    name: "{{ item.name }}"
+    type: password
+    control: requisite
+    module_path: "{{ item.module_path }}"
+    new_type: password
+    new_control: required
+    new_module_path: pam_pwhistory.so
+    module_arguments: remember=5
+    state: after
+  with_items:
+    - name: system-auth
+      module_path: "{{ module_path.stdout_lines[0] }}"
+    - name: password-auth
+      module_path: "{{ module_path.stdout_lines[1] }}"
+  tags:
+    - level-1
+    - 5.4.2
+    - automated

@@ -1,0 +1,57 @@
+---
+# 1.2.1 Ensure GPG keys are configured
+
+# The remediation actions for this recommendation are site-specific, therefore we test that
+# executing the specified rpm command results in no errors.
+- name: 1.2.1 - Ensure GPG keys are configured
+  ansible.builtin.command: rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n'
+  tags:
+    - level-1
+    - 1.2.1
+    - manual
+    - skip_ansible_lint
+
+# 1.2.2 - Ensure package manager repositories are configured
+
+# The remediation actions for this recommendation are site-specific, therefore we test that
+# executing 'yum repolist' results in no errors.
+- name: 1.2.2 - Ensure package manager repositories are configured
+  ansible.builtin.command: yum repolist
+  tags:
+    - level-1
+    - 1.2.2
+    - manual
+    - skip_ansible_lint
+
+# 1.2.3 - Ensure gpgcheck is globally activated
+
+- name: 1.2.3 - Get all repos on remote host
+  ansible.builtin.find:
+    paths: /etc/yum.repos.d
+    pattern: "*.repo"
+  register: yum_repos
+  tags:
+    - level-1
+    - 1.2.3
+    - automated
+
+- name: 1.2.3 - Verify that gpgcheck is enabled in /etc/yum.conf
+  ansible.builtin.lineinfile:
+    regexp: ^gpgcheck
+    line: gpgcheck=1
+    dest: /etc/yum.conf
+  tags:
+    - level-1
+    - 1.2.3
+    - automated
+
+- name: 1.2.3 - Verify that gpgcheck is enabled for all repositories in /etc/yum.repos.d
+  ansible.builtin.replace:
+    regexp: ^gpgcheck=0
+    replace: gpgcheck=1
+    dest: "{{ item.path }}"
+  with_items: "{{ yum_repos.files }}"
+  tags:
+    - level-1
+    - 1.2.3
+    - automated

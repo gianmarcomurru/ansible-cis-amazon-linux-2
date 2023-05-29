@@ -1,0 +1,119 @@
+---
+# 1.5.1 Ensure core dumps are restricted
+
+- name: 1.5.1 - Check if security limits file exists
+  ansible.builtin.stat:
+    path: /etc/security/limits.conf
+  register: security_limits_1_5_1
+  tags:
+    - level-1
+    - 1.5.1
+    - automated
+    - ignore_on_docker
+
+- name: 1.5.1 - Ensure core dumps are restricted
+  community.general.pam_limits:
+    dest: /etc/security/limits.conf
+    limit_item: core
+    limit_type: hard
+    domain: "*"
+    value: "0"
+  when: security_limits_1_5_1.stat.exists is defined and security_limits_1_5_1.stat.exists
+  tags:
+    - level-1
+    - 1.5.1
+    - automated
+    - ignore_on_docker
+
+- name: 1.5.1 - Prevent suid programs from dumping core
+  ansible.posix.sysctl:
+    ignoreerrors: true
+    name: fs.suid_dumpable
+    value: "0"
+    state: present
+  notify: Reload systemd
+  tags:
+    - level-1
+    - 1.5.1
+    - automated
+    - ignore_on_docker
+
+# 1.5.2 Ensure XD/NX support is enabled
+
+- name: 1.5.2 - Check if XD/NX support is enabled
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    dmesg | grep NX
+  register: dmesg_1_5_2
+  check_mode: false
+  changed_when: false
+  ignore_errors: true
+  tags:
+    - level-1
+    - 1.5.2
+    - manual
+    - ignore_on_docker
+
+- name: 1.5.2 - Ensure XD/NX support is enabled
+  ansible.builtin.fail:
+    msg: Ensure XD/NX support is enabled.
+  when:
+    - "'NX (Execute Disable) protection: active' not in dmesg_1_5_2.stdout"
+    - fail_on_manual_remediation_actions
+  tags:
+    - level-1
+    - 1.5.2
+    - manual
+    - ignore_on_docker
+
+- name: 1.5.2 - Ensure XD/NX support is enabled
+  ansible.builtin.debug:
+    msg: "*** ACTION REQUIRED *** Ensure XD/NX support is enabled."
+  when:
+    - "'NX (Execute Disable) protection: active' not in dmesg_1_5_2.stdout"
+    - not fail_on_manual_remediation_actions
+  tags:
+    - level-1
+    - 1.5.2
+    - manual
+    - ignore_on_docker
+
+# 1.5.3 Ensure address space layout randomization (ASLR) is enabled
+- name: 1.5.3 - Ensure address space layout randomization is enabled
+  ansible.posix.sysctl:
+    ignoreerrors: true
+    name: kernel.randomize_va_space
+    value: "2"
+    state: present
+  tags:
+    - level-1
+    - 1.5.3
+    - automated
+    - ignore_on_docker
+
+# 1.5.4 Ensure prelink is not installed
+- name: 1.5.4 - Check if prelink binary exists
+  ansible.builtin.command: which prelink
+  ignore_errors: true
+  register: which_1_5_4
+  tags:
+    - level-1
+    - 1.5.4
+    - automated
+
+- name: 1.5.4 - Restore prelinked binaries
+  ansible.builtin.command: prelink -ua
+  when: which_1_5_4.rc is defined and which_1_5_4.rc == 0
+  tags:
+    - level-1
+    - 1.5.4
+    - automated
+
+- name: 1.5.4 - Ensure prelink is not installed
+  ansible.builtin.yum:
+    name: prelink
+    state: absent
+  tags:
+    - level-1
+    - 1.5.4
+    - automated

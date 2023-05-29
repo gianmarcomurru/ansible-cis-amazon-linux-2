@@ -1,0 +1,22 @@
+---
+- name: Disable docker from Amazon Linux 2 Extras
+  ansible.builtin.command: amazon-linux-extras disable docker
+
+- name: Install the ecs Amazon Linux extra repository
+  ansible.builtin.command: amazon-linux-extras install -y ecs
+
+- name: Enable the ecs Amazon Linux extra repository
+  ansible.builtin.service:
+    name: ecs
+    state: started
+    enabled: true
+
+# Include CIS Docker Benchmarks
+- name: Include CIS Docker Benchmarks
+  ansible.builtin.debug:
+    msg: Include CIS Docker Benchmarks
+- ansible.builtin.include_tasks: 1-host-configuration.yml
+- ansible.builtin.include_tasks: 2-docker-daemon-configuration.yml
+- ansible.builtin.include_tasks: 3-docker-daemon-configuration-files.yml
+- ansible.builtin.include_tasks: 5-container-runtime-configuration.yml
+- ansible.builtin.include_tasks: 7-docker-swarm-configuration.yml
