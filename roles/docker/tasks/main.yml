@@ -15,8 +15,14 @@
 - name: Include CIS Docker Benchmarks
   ansible.builtin.debug:
     msg: Include CIS Docker Benchmarks
-- ansible.builtin.include_tasks: 1-host-configuration.yml
-- ansible.builtin.include_tasks: 2-docker-daemon-configuration.yml
-- ansible.builtin.include_tasks: 3-docker-daemon-configuration-files.yml
-- ansible.builtin.include_tasks: 5-container-runtime-configuration.yml
-- ansible.builtin.include_tasks: 7-docker-swarm-configuration.yml
+
+- name: "1. Host Configuration"
+  ansible.builtin.include_tasks: 1-host-configuration.yml
+- name: "2. Docker Daemon Configuration"
+  ansible.builtin.include_tasks: 2-docker-daemon-configuration.yml
+- name: "3. Docker Daemon Configuration Files"
+  ansible.builtin.include_tasks: 3-docker-daemon-configuration-files.yml
+- name: "5. Container Runtime Configuration"
+  ansible.builtin.include_tasks: 5-container-runtime-configuration.yml
+- name: "7. Docker Swarm Configuration"
+  ansible.builtin.include_tasks: 7-docker-swarm-configuration.yml

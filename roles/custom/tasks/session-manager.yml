@@ -1,5 +1,4 @@
 ---
-
 - name: Check if Session Manager is installed
   ansible.builtin.shell: >
     set -o pipefail && rpm -qa | grep amazon-ssm-agent
@@ -65,3 +64,12 @@
     enabled: true
   tags:
     - session-manager
+
+- name: Fix PAY-7837 - Standard_Stream
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: '1048576'
+    state: present
+  tags:
+    - session-manager
+    - ignore_on_docker

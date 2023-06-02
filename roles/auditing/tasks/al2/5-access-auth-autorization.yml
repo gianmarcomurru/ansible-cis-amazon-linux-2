@@ -1,0 +1,265 @@
+---
+
+- name: Auditing AL2 | 5.1.1
+  ansible.builtin.command: systemctl is-enabled crond
+  register: "audit_5_1_1"
+  failed_when: audit_5_1_1.stdout != "enabled"
+
+- name: Auditing AL2 | 5.1.1
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    systemctl status crond
+    | grep 'Active: active (running) '
+  register: "audit_5_1_1"
+  failed_when: audit_5_1_1.stdout == ""
+
+- name: Auditing AL2 | 5.1.2->5.1.9
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    stat {{ item.path }}
+    | grep -E "^Access:\s*\({{ item.permissions }}------\)\s*Uid:\s*\(\s*0/\s*root\)\s*Gid:\s*\(\s*0/\s*root\)"
+  with_items:
+    - path: /etc/crontab
+      permissions: "0600/-rw-"
+    - path: /etc/cron.hourly
+      permissions: "0700/drwx"
+    - path: /etc/cron.daily
+      permissions: "0700/drwx"
+    - path: /etc/cron.weekly
+      permissions: "0700/drwx"
+    - path: /etc/cron.monthly
+      permissions: "0700/drwx"
+    - path: /etc/cron.d
+      permissions: "0700/drwx"
+    - path: /etc/cron.allow
+      permissions: "0600/-rw-"
+    - path: /etc/at.allow
+      permissions: "0600/-rw-"
+  register: "audit_5_1_2"
+  failed_when: audit_5_1_2.stdout == ""
+
+- name: Auditing AL2 | 5.1.8-9
+  ansible.builtin.command: stat {{ item }}
+  with_items:
+    - /etc/cron.deny
+    - /etc/at.deny
+  register: "audit_5_1_8"
+  failed_when: audit_5_1_8.rc != 1 and "No such file or directory" not in audit_5_1_8.stdout
+
+- name: Auditing AL2 | 5.2.1
+  ansible.builtin.command: rpm -q sudo
+  register: "audit_5_2_1"
+  failed_when: audit_5_2_1.rc != 0
+
+- name: Auditing AL2 | 5.2.2
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -sEi
+    '^\s*Defaults\s+([^#]\S+,\s*)?use_pty\b'
+    /etc/sudoers /etc/sudoers.d/*
+    | cut -d: -f2
+  register: "audit_5_2_2"
+  failed_when: audit_5_2_2.stdout != "Defaults    use_pty"
+
+- name: Auditing AL2 | 5.2.3
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -Ei
+    '^\s*Defaults\s+([^#;]+,\s*)?logfile\s*=\s*(")?[^#;]+(")?'
+    /etc/sudoers /etc/sudoers.d/*
+    | cut -d: -f2
+  register: "audit_5_2_3"
+  failed_when: audit_5_2_3.rc != 0 and 'Defaults logfile="' not in audit_5_2_3.stdout
+
+- name: Auditing AL2 | 5.4.1
+  ansible.builtin.command: grep '^\s*{{ item.name }}\s*' /etc/security/pwquality.conf
+  with_items:
+    - name: "minlen"
+      value: "14"
+    - name: "minclass"
+      value: "4"
+  register: "audit_5_4_1"
+  failed_when: audit_5_4_1.stdout != "{{ item.name }} = {{ item.value }}"
+
+- name: Auditing AL2 | 5.4.1
+  ansible.builtin.command: >-
+    grep -P '^\s*password\s+(?:requisite|required)\s+pam_pwquality\.so' /etc/pam.d/password-auth
+  register: "audit_5_4_2"
+  failed_when: >-
+    audit_5_4_2.rc != 0 or
+    "retry=3" not in audit_5_4_2.stdout or
+    "try_first_pass" not in audit_5_4_2.stdout
+
+- name: Auditing AL2 | 5.4.2
+  ansible.builtin.command: >-
+    grep -E '^\s*auth\s+\S+\s+pam_(faillock|unix)\.so' /etc/pam.d/system-auth /etc/pam.d/password-auth
+  register: "audit_5_4_2"
+
+- name: Auditing AL2 | 5.4.2
+  ansible.builtin.fail:
+    msg: "5.4.2 failed"
+  loop: "{{ audit_5_4_2.stdout_lines }}"
+  when: >
+    not (
+      "required pam_faillock.so preauth silent audit deny=5 unlock_time=900" in item or
+      "sufficient pam_unix.so try_first_pass nullok" in item or
+      "[default=die] pam_faillock.so authfail audit deny=5 unlock_time=900" in item or
+      "required pam_faillock.so preauth silent audit deny=5 unlock_time=900" in item or
+      "sufficient pam_unix.so try_first_pass nullok" in item or
+      "[default=die] pam_faillock.so authfail audit deny=5 unlock_time=900" in item)
+
+- name: Auditing AL2 | 5.4.2
+  ansible.builtin.command: >-
+    grep -E '^\s*account\s+required\s+pam_faillock.so\s*' /etc/pam.d/system-auth /etc/pam.d/password-auth
+  register: "audit_5_4_2"
+
+- name: Auditing AL2 | 5.4.2
+  ansible.builtin.fail:
+    msg: "5.4.2 failed"
+  loop: "{{ audit_5_4_2.stdout_lines }}"
+  when: >
+    not (
+      item == "/etc/pam.d/system-auth:account    required pam_faillock.so" or
+      item == "/etc/pam.d/password-auth:account    required pam_faillock.so")
+  
+- name: Auditing AL2 | 5.4.3
+  ansible.builtin.command: >-
+    grep -P '^\h*password\h+(sufficient|requisite|required)\h+pam_unix\.so\h+([^#\n\r]+)?
+    sha512(\h+.*)?$' /etc/pam.d/system-auth /etc/pam.d/password-auth
+  register: "audit_5_4_3"
+
+- name: Auditing AL2 | 5.4.3
+  ansible.builtin.fail:
+    msg: "5.4.3 failed"
+  loop: "{{ audit_5_4_3.stdout_lines }}"
+  when: >
+    not (
+      "sufficient pam_unix.so try_first_pass use_authtok nullok sha512 shadow" in item)
+
+- name: Auditing AL2 | 5.4.4
+  ansible.builtin.command: >-
+    grep -P '^\s*password\s+(requisite|required)\s+pam_pwhistory\.so\s+([^#]+\s+)*remember=([5-9]|[1-9][0-9]+)\b'
+    /etc/pam.d/system-auth /etc/pam.d/password-auth
+  register: "audit_5_4_4"
+  failed_when: audit_5_4_4.stdout == ""
+
+- name: Auditing AL2 | 5.5.1.1->5.5.1.3
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -E '^\s*{{ item.name }}\s+\S+\s*$'
+    /etc/login.defs | awk '{print $2}'
+  register: "audit_5_5_1_1"
+  with_items:
+    - name: PASS_MAX_DAYS
+      value: "{{ password_expire_max }}"
+    - name: PASS_MIN_DAYS
+      value: "{{ password_expire_min }}"
+    - name: PASS_WARN_AGE
+      value: "{{ password_expire_warning }}"
+  failed_when: audit_5_5_1_1.stdout | int != item.value
+
+- name: Auditing AL2 | 5.5.1.4
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    useradd -D
+    | grep INACTIVE
+    | cut -d= -f2
+  register: "audit_5_5_1_4"
+  failed_when: audit_5_5_1_4.stdout | int > password_expire_inactive
+
+- name: Auditing AL2 | 5.5.1.4
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -E ^[^:]+:[^\!*] /etc/shadow
+    | cut -d: -f7
+  register: "audit_5_5_1_4"
+  loop: "{{ audit_5_5_1_4.stdout_lines }}"
+  failed_when: item | int > password_expire_inactive
+
+- name: Auditing AL2 | 5.5.1.5
+  ansible.builtin.shell: >-
+    for usr in $(cut -d: -f1 /etc/shadow); do
+      [[ $(chage --list $usr | grep '^Last password change' | cut -d: -f2) > $(date) ]] &&
+      echo "$usr :$(chage -- list $usr
+      | grep '^Last password change'
+      | cut -d: -f2)";
+    done
+
+- name: Get users details
+  ansible.builtin.shell: >-
+    set -o pipefail && grep -E ^[^:]+:[^\\!*] /etc/shadow |
+    cut -d: -f1,3,4,5,6,7
+  register: users_details
+  
+- name: Make list of dicts with user details
+  ansible.builtin.set_fact:
+    users_details_dict: "{{ users_details_dict | default([]) + [{'username': item.split(':')[0], 'password_last_changed': item.split(':')[1] | int, 'password_min_days':\
+      \ item.split(':')[2] | int, 'password_max_days': item.split(':')[3] | int, 'password_warn_days': item.split(':')[4] | int, 'password_inactive_days': item.split(':')[5]\
+      \ | int}] }}"
+  with_items: "{{ users_details.stdout_lines }}"
+  
+- name: Auditing AL2 | 5.5.1.5
+  ansible.builtin.shell: >
+    set -o pipefail && date -d
+    "$(chage -l {{ item.username }} | grep "^Last password change" | cut -d: -f2 | sed "s/^ *//;s/ *$//")"
+    +%Y-%m-%d
+  register: output
+  with_items: "{{ users_details_dict }}"
+
+- name: Auditing AL2 | 5.5.2
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    {{ item.cmd }}
+  register: "audit_5_5_2"
+  with_items:
+    - cmd: >-
+        awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt"
+        && $1!~/^\+/ && $3<'"$(awk '/^\s*UID_MIN/{print $2}' /etc/login.defs)"'
+        && $7!="'"$(which nologin)"'" && $7!="/bin/false") {print}' /etc/passwd
+    - cmd: >-
+        awk -F: '($1!="root" && $1!~/^\+/ && $3<'"$(awk '/^\s*UID_MIN/{print $2}'
+        /etc/login.defs)"') {print $1}' /etc/passwd | xargs -I '{}' passwd -S '{}'
+        | awk '($2!="L" && $2!="LK") {print $1}'
+  failed_when:
+    - audit_5_5_2.stdout != ""
+
+- name: Auditing AL2 | 5.5.3
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep "^root:" /etc/passwd
+    | cut -f4 -d:
+  register: "audit_5_5_3"
+  failed_when: audit_5_5_3.stdout != "0"
+
+- name: Auditing AL2 | 5.5.4
+  ansible.builtin.script: 5-5-4.sh
+  register: "audit_5_5_4"
+  failed_when: audit_5_5_4.rc != 0
+
+- name: Auditing AL2 | 5.5.5
+  ansible.builtin.script: 5-5-5.sh
+  register: "audit_5_5_5"
+  failed_when: audit_5_5_5.rc != 0
+
+- name: Auditing AL2 | 5.5.5
+  ansible.builtin.shell: >
+    set -o pipefail && 
+    grep -RPi '(^|^[^#]*)\s*umask\s+([0-7][0-7][01][0-7]\b|[0-7][0-7][0-7][0-6]\b|[0-7][01][0-7]\b|[0-7][0-7][0-6]\b|(u=[rwx]{0,3},)?(g=[rwx]{0,3},)?o=[rwx]+\b|(u=[rwx]{1,3},)?g=[^rx]{1,3}( ,o=[rwx]{0,3})?\b)' /etc/login.defs /etc/profile* /etc/bashrc*
+  register: "audit_5_5_1_5"
+  failed_when: audit_5_5_1_5.stdout != ""
+
+- name: Auditing AL2 | 5.7
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    grep -Pi '^\h*auth\h+(?:required|requisite)\h+pam_wheel\.so\h+(?:[^#\n\r]+\h+)?((?!\2)(use_uid\b|group=\H+\b))\h+(?:[^#\n\r]+\h+)?((?!\1)(use_uid\b|group=\H+\b))(\h+.*)?$' /etc/pam.d/su
+    | cut -d= -f2
+  register: "audit_5_7"
+  failed_when: audit_5_7.stdout == ""
+
+- name: Auditing AL2 | 5.7
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    grep {{ audit_5_7 }} /etc/group
+    | cut -d: -f4
+  register: "audit_5_7"
+  failed_when: audit_5_7.stdout != ""

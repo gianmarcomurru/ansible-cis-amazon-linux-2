@@ -1,8 +1,0 @@
----
-# 5 Access, Authentication and Authorization
-
-- ansible.builtin.include_tasks: 5-1.yml
-- ansible.builtin.include_tasks: 5-2.yml
-- ansible.builtin.include_tasks: 5-3.yml
-- ansible.builtin.include_tasks: 5-4.yml
-- ansible.builtin.include_tasks: 5-5.yml

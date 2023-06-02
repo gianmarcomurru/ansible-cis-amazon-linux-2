@@ -10,11 +10,11 @@
       ansible.builtin.import_tasks: handlers/main.yml
   roles:
     - role: common
-    - role: 1-setup
-    - role: 2-services
-    - role: 3-network
-    - role: 5-access-auth-autorization
-    - role: 6-sys-maintenance
+    - role: setup
+    - role: services
+    - role: network
+    - role: access_auth_autorization
+    - role: sys_maintenance
     - role: custom
     - role: docker
       when: instance_type == "docker"

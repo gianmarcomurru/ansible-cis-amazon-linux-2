@@ -1,0 +1,125 @@
+---
+
+- name: Auditing AL2 | 3.1.1
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    sysctl {{ item }}
+    | grep -E "^{{ item }}\s*=\s*1"
+  with_items:
+    - net.ipv6.conf.all.disable_ipv6
+    - net.ipv6.conf.default.disable_ipv6
+  register: "audit_3_1_1"
+  failed_when: audit_3_1_1.stdout == ""
+
+- name: Auditing AL2 | 3.1.1
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -E '^\s*net\.ipv6\.conf\.(all|default)\.disable_ipv6\s*=\s*1\b(\s+#.*)?$'
+    /etc/sysctl.conf /etc/sysctl.d/*.conf
+    | cut -d: -f2
+  register: "audit_3_1_1"
+
+- name: Auditing AL2 | 3.1.1
+  ansible.builtin.fail:
+    msg: "Failed: 3.1.1; IPv6 is not disabled"
+  loop: "{{ audit_3_1_1.stdout_lines }}"
+  when: not (item == "net.ipv6.conf.all.disable_ipv6=1" or item == "net.ipv6.conf.default.disable_ipv6=1")
+
+
+- name: Auditing AL2 | 3.1.2
+  ansible.builtin.copy:
+    src: 3-1-2.sh
+    dest: /tmp/3-1-2.sh
+    mode: 0755
+
+- name: Auditing AL2 | 3.1.2
+  ansible.builtin.shell: bash /tmp/3-1-2.sh
+  register: "audit_3_1_2"
+  failed_when: audit_3_1_2.stdout != "Wireless is not enabled"
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 3.2.1
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    sysctl net.ipv4.ip_forward
+    | grep -E "^net.ipv4.ip_forward\s*=\s*0"
+  register: "audit_3_2_1"
+  # failed_when: audit_3_2_1.stdout == ""
+  ignore_errors: true
+
+- name: Auditing AL2 | 3.2.1
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -E -s "^\s*net\.ipv4\.ip_forward\s*=\s*1" /etc/sysctl.conf
+    /etc/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /run/sysctl.d/*.conf
+  register: "audit_3_2_1"
+  failed_when: audit_3_2_1.stdout != ""
+
+- name: Auditing AL2 | 3.2.2
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    sysctl {{ item }}
+    | grep -E "^{{ item }}\s*=\s*0"
+  with_items:
+    - net.ipv4.conf.all.send_redirects
+    - net.ipv4.conf.default.send_redirects
+  register: "audit_3_2_2"
+  failed_when: audit_3_2_2.stdout == ""
+
+- name: Auditing AL2 | 3.2.2
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    grep -E "net\.ipv4\.conf\.(all|default)\.send_redirects"
+    /etc/sysctl.conf /etc/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf
+    | cut -d: -f2
+  register: "audit_3_2_2"
+
+- name: Auditing AL2 | 3.2.2
+  ansible.builtin.fail:
+    msg: "Failed: 3.2.2; IPv6 is not disabled"
+  loop: "{{ audit_3_2_2.stdout_lines }}"
+  when: not (item == "net.ipv4.conf.all.send_redirects=0" or item == "net.ipv4.conf.default.send_redirects=0")
+
+- name: Auditing AL2 | 3.4.1-2
+  ansible.builtin.command: modprobe -n -v {{ item }}
+  with_items:
+    - dccp
+    - sctp
+  register: "audit_3_4_1"
+  failed_when: audit_3_4_1.stdout != "install /bin/true "
+
+- name: Auditing AL2 | 3.4.1-2
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    lsmod | grep {{ item }}
+  with_items:
+    - dccp
+    - sctp
+  register: "audit_3_4_1"
+  failed_when: audit_3_4_1.stdout != ""
+
+- name: Auditing AL2 | 3.5.1.1
+  ansible.builtin.command: rpm -q firewalld iptables
+  register: "audit_3_5_1_1"
+  failed_when: audit_3_5_1_1.rc != 0
+
+- name: Auditing AL2 | 3.5.1.2-3
+  ansible.builtin.command: rpm -q {{ item }}
+  with_items:
+    - iptables-services
+    - nftables
+  register: "audit_3_5_1_2"
+  failed_when: audit_3_5_1_2.rc != 1
+
+- name: Auditing AL2 | 3.5.1.4-5
+  ansible.builtin.command: "{{ item.cmd }}"
+  with_items:
+    - cmd: systemctl is-enabled firewalld
+      output: enabled
+    - cmd: firewall-cmd --state
+      output: running
+    - cmd: firewall-cmd --get-default-zone
+      output: public
+  register: "audit_3_5_1_4"
+  failed_when: audit_3_5_1_4.stdout != item.output

@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  require-issue-key-commits:
+  checkout:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,14 +17,15 @@ jobs:
           fetch-depth: 0
 
   validate:
-    runs-on: [self-hosted, X64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: make check
-      - run: make lint
+      - name: Run ansible-lint
+        uses: ansible/ansible-lint-action@main
 
   test_build:
-    runs-on: [self-hosted, X64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: make docker

@@ -24,7 +24,7 @@ Defaults    always_set_home
 Defaults    match_group_by_gid
 
 # Allow members of group sudo to execute any command
-%reepay     ALL=LOG_INPUT:ALL,!/bin/su
+%adm     ALL=LOG_INPUT:ALL,!/bin/su
 
 # See sudoers(5) for more information on "#include" directives:
 

@@ -1,0 +1,9 @@
+---
+# 2 Services
+
+- name: "2.1 Special Purpose Services"
+  ansible.builtin.include_tasks: 2-1.yml
+- name: "2.2 Service Clients"
+  ansible.builtin.include_tasks: 2-2.yml
+- name: "2.3 Ensure nonessential services are removed or masked"
+  ansible.builtin.include_tasks: 2-3.yml

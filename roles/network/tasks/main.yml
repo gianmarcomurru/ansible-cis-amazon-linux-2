@@ -1,0 +1,22 @@
+---
+# 3 Network Configuration
+
+- name: "3.1 Disable unused network protocols and devices"
+  ansible.builtin.include_tasks: 3-1.yml
+- name: "3.2 Network Parameters (Host Only)"
+  ansible.builtin.include_tasks: 3-2.yml
+  when: network_params == "host_only"
+- name: "3.3 Network Parameters (Host and Router)"
+  ansible.builtin.include_tasks: 3-3.yml
+  when: network_params == "host_and_router"
+- name: "3.4 Uncommon Network Protocols"
+  ansible.builtin.include_tasks: 3-4.yml
+- name: "3.5.1 Configure firewalld"
+  ansible.builtin.include_tasks: 3-5-1.yml
+  when: firewall == "firewalld"
+- name: "3.5.2 Configure nftables"
+  ansible.builtin.include_tasks: 3-5-2.yml
+  when: firewall == "nftables"
+- name: "3.5.3 Configure iptables"
+  ansible.builtin.include_tasks: 3-5-3.yml
+  when: firewall == "iptables"

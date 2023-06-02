@@ -1,0 +1,52 @@
+---
+# .ansible-lint
+
+# min, basic, moderate,safety, shared, production
+profile: production
+
+# Allows dumping of results in SARIF format
+# sarif_file: result.sarif
+
+# exclude_paths included in this file are parsed relative to this file's location
+# and not relative to the CWD of execution. CLI arguments passed to the --exclude
+# option are parsed relative to the CWD of execution.
+exclude_paths:
+  - .github
+  - roles/auditing/* # This role is work in progress
+
+# Enforce variable names to follow pattern below, in addition to Ansible own
+# requirements, like avoiding python identifiers. To disable add `var-naming`
+# to skip_list.
+var_naming_pattern: ^[a-z0-9_][a-z0-9_]*$
+
+use_default_rules: true
+
+# Ansible-lint is able to recognize and load skip rules stored inside
+# `.ansible-lint-ignore` files. To skip a rule just enter filename and tag,
+# like "playbook.yml package-latest" on a new line. Optionally you can add
+# comments after the tag, prefixed by "#". We discourage the use of skip_list
+# below because that will hide violations from the output. When putting ignores
+# inside the ignore file, they are marked as ignored, but still visible, making
+# it easier to address later.
+skip_list:
+  - ignore-errors
+  - no-changed-when
+  - var-naming[no-role-prefix]
+
+# Offline mode disables installation of requirements.yml and schema refreshing
+offline: true
+
+# Uncomment to enforce action validation with tasks, usually is not
+# needed as Ansible syntax check also covers it.
+skip_action_validation: false
+
+# List of additional kind:pattern to be added at the top of the default
+# match list, first match determines the file kind.
+kinds:
+  # - playbook: "**/examples/*.{yml,yaml}"
+  # - galaxy: "**/folder/galaxy.yml"
+  - tasks: "**/tasks/*.yml"
+  - vars: ./defaults/vars.yml
+  # - ansible.builtin.meta: "**/meta/main.yml"
+  - yaml: ./main.yaml
+  - tasks: ./defaults/handlers.yml

@@ -1,0 +1,17 @@
+---
+- name: Start auditing CIS Benchmarks for Amazon Linux 2
+  ansible.builtin.debug:
+    msg: Start auditing CIS Benchmarks for Amazon Linux 2
+
+- name: Flush handlers before start auditing
+  ansible.builtin.meta: flush_handlers
+
+- name: Reboot system
+  ansible.builtin.reboot:
+  when: reboot_required is defined and reboot_required
+
+- ansible.builtin.include_tasks: al2/setup.yml
+- ansible.builtin.include_tasks: al2/services.yml
+- ansible.builtin.include_tasks: al2/network.yml
+- ansible.builtin.include_tasks: al2/access_auth_autorization.yml
+- ansible.builtin.include_tasks: al2/sys_maintenance.yml

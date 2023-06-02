@@ -4,7 +4,7 @@
     name: operation
     state: present
   tags:
-    - ops-users
+    - admin-users
 
 - name: Create users
   ansible.builtin.user:
@@ -20,7 +20,7 @@
     create_home: true
   with_items: "{{ sudoers }}"
   tags:
-    - ops-users
+    - admin-users
 
 - name: Set users password policy
   ansible.builtin.command: >-
@@ -28,7 +28,7 @@
     {{ password_expire_inactive }} -d {{ item.password_last_change }}
   with_items: "{{ sudoers }}"
   tags:
-    - ops-users
+    - admin-users
 
 - name: Set home permissions
   ansible.builtin.file:
@@ -36,11 +36,11 @@
     state: directory
     recurse: true
     owner: "{{ item.name }}"
-    group: "{{ item.name }}"
+    group: "admin"
     mode: "0700"
   with_items: "{{ sudoers }}"
   tags:
-    - ops-users
+    - admin-users
 
 - name: Copy login script in each user home
   ansible.builtin.copy:
@@ -50,7 +50,7 @@
     group: root
     mode: "0770"
   tags:
-    - ops-users
+    - admin-users
 
 - name: Copy sudoers to /etc/sudoers
   ansible.builtin.copy:
@@ -61,4 +61,4 @@
     mode: "0644"
     validate: visudo -cf %s
   tags:
-    - ops-users
+    - admin-users
