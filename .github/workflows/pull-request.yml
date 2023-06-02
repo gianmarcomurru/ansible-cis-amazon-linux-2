@@ -10,14 +10,14 @@ permissions:
 
 jobs:
   checkout:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
   validate:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: make check
@@ -25,7 +25,7 @@ jobs:
         uses: ansible/ansible-lint-action@main
 
   test_build:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: make docker

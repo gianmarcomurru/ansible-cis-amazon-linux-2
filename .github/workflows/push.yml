@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: make check
@@ -31,7 +31,7 @@ jobs:
           path: ami.txt
 
   deploy-to-staging:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     environment: staging
     needs: [build, git-tag]
     if: ${{ inputs.deploy-to-staging == true }}
@@ -50,7 +50,7 @@ jobs:
           aws ec2 modify-image-attribute --image-id $AMI --launch-permission "{\"Add\":[{\"UserId\":\"$ACCOUNT\"}]}"
 
   deploy-to-production:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     environment: production
     needs: deploy-to-staging
     if: ${{ inputs.deploy-to-production == true }}
