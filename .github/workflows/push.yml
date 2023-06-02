@@ -2,8 +2,8 @@ name: Push pipeline
 
 on:
   push:
-    branches:
-      - 'main'
+    branches: []
+      # - 'main' Configure the jobs first
   workflow_dispatch: {}
 
 permissions:

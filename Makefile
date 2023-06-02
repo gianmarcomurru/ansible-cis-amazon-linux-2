@@ -22,11 +22,11 @@ password_update:
 	docker run -it --rm -v $(PWD)/defaults:/root/defaults pass_update
 
 docker: init
-	docker build -t packer-ecs-base:base .
+	docker build -t packer-docker-base:base .
 	packer build -var "docker_instance_type=$(type)" docker.pkr.hcl 
 
 test: docker
-	docker run -it packer-ecs-base
+	docker run -it packer-docker-base
 
 sso:
 	aws sso login

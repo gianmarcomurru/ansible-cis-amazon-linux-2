@@ -28,7 +28,7 @@ pip3 install ansible-lint
 Default value is `base`
 
 ```
-make deploy type=ecs
+make deploy type=docker
 ```
 
 ### Using AWS SSO login
