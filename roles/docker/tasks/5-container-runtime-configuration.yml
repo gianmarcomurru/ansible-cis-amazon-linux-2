@@ -45,7 +45,7 @@
 # This is applied in the ECS Task Definition
 
 # 5.6 Ensure sshd is not run within containers
-# Ensured in fintech_company/docker-base-java
+# Ensured in fintech_company-docker-base-java
 
 # 5.13 Ensure that incoming container traffic is bound to a specific host interface
 # This is applied in the ECS Task Definition, networking is then managed by AWS through the ELB

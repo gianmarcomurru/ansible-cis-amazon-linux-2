@@ -1,5 +1,0 @@
----
-# 6 System Maintenance
-
-- ansible.builtin.include_tasks: 6-1.yml
-- ansible.builtin.include_tasks: 6-2.yml

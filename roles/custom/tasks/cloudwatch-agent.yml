@@ -9,7 +9,8 @@
     - cloudwatch
 
 # Set config file path for CloudWatch agent
-- ansible.builtin.set_fact:
+- name: "Set config file path for CloudWatch agent"
+  ansible.builtin.set_fact:
     cloudwatch_config_path: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
   tags:
     - cloudwatch

@@ -1,0 +1,7 @@
+---
+# 6 System Maintenance
+
+- name: "6.1 System File Permissions"
+  ansible.builtin.include_tasks: 6-1.yml
+- name: "6.2 User and Group Settings"
+  ansible.builtin.include_tasks: 6-2.yml

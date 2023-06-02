@@ -1,7 +1,7 @@
 
 FROM amazonlinux:2
 
-RUN yum install -y sudo shadow-utils su passwd yum-utils
+RUN yum install -y sudo shadow-utils su passwd yum-utils 
 RUN yum install -y python3 python3-pip
 RUN pip3 install ruamel.yaml
 
@@ -14,9 +14,6 @@ WORKDIR /root
 
 RUN users=$(python3 -c 'from update_yaml import names; names()')
 RUN for user in $users; do useradd -m $user; done
-# RUN adduser -m ole
-# RUN adduser -m david
-# RUN adduser -m gianmarco
 
 # Set password policy, min 14 chars, at least 1 uppercase, 1 lowercase, 1 digit, 1 special char
 RUN echo -e "minlen = 14\nminclass = 4" >> /etc/security/pwquality.conf

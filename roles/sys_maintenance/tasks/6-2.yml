@@ -1,0 +1,244 @@
+---
+# 6.2 User and Group Settings
+# This section provides guidance on securing aspects of the users and groups.
+# Note: The recommendations in this section check local users and groups.
+# Any users or groups from other sources such as LDAP will not be audited.
+# In a domain environment similar checks should be performed against domain users and groups.
+
+# 6.2.1 Ensure accounts in /etc/passwd use shadowed passwords
+- name: 6.2.1 - Ensure accounts in /etc/passwd use shadowed passwords
+  ansible.builtin.command: >
+    awk -F: '($2 != "x" ) { print $1 " is not set to shadowed passwords "}' /etc/passwd
+  register: output
+  failed_when: output.stdout != ""
+  tags:
+    - level-1
+    - 6.2.1
+    - automated
+
+# 6.2.2 Ensure /etc/shadow password fields are not empty
+- name: 6.2.2 - Ensure /etc/shadow password fields are not empty
+  ansible.builtin.command: >
+    awk -F: '($2 == "" ) { print $1 " does not have a password "}' /etc/shadow
+  register: output
+  failed_when: output.stdout != ""
+  tags:
+    - level-1
+    - 6.2.2
+    - automated
+
+# 6.2.3 Ensure all groups in /etc/passwd exist in /etc/group
+- name: 6.2.3 - Ensure all groups in /etc/passwd exist in /etc/group
+  ansible.builtin.script: audit_6_2_3.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_3
+  failed_when: audit_6_2_3.stdout != ""
+  tags:
+    - level-1
+    - 6.2.3
+    - automated
+
+# 6.2.4 Ensure shadow group is empty
+- name: 6.2.4 - Ensure shadow group is empty
+  ansible.builtin.command: >
+    awk -F: '($1=="shadow") {print $NF}' /etc/group
+  register: output
+  failed_when: output.stdout != ""
+  tags:
+    - level-1
+    - 6.2.4
+    - automated
+
+- name: 6.2.4 - Ensure shadow group is empty
+  ansible.builtin.command: >
+    awk -F: -v GID="$(awk -F: '($1=="shadow") {print $3}' /etc/group)" '($4==GID) {print $1}' /etc/passwd
+  register: output
+  failed_when: output.stdout != ""
+  tags:
+    - level-1
+    - 6.2.4
+    - automated
+
+# 6.2.5 Ensure no duplicate user names exist
+- name: 6.2.5 - Ensure no duplicate user names exist
+  ansible.builtin.script: audit_6_2_5.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_5
+  failed_when: audit_6_2_5.stdout != ""
+  tags:
+    - level-1
+    - 6.2.5
+    - automated
+
+# 6.2.6 Ensure no duplicate group names exist
+- name: 6.2.6 - Ensure no duplicate group names exist
+  ansible.builtin.script: audit_6_2_6.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_6
+  failed_when: audit_6_2_6.stdout != ""
+  tags:
+    - level-1
+    - 6.2.6
+    - automated
+
+# 6.2.7 Ensure no duplicate UIDs exist
+- name: 6.2.7 - Ensure no duplicate UIDs exist
+  ansible.builtin.shell: >
+    set -o pipefail && cat /etc/passwd | cut -d: -f3
+  register: uids
+
+- name: 6.2.7 - Ensure no duplicate UIDs exist
+  ansible.builtin.set_fact:
+    uids_freq: "{{ uids_freq | default([]) + [{'key': item, 'freq': uids.stdout_lines | select('regex', uids_regex) | list | length}] }}"
+  loop: "{{ uids.stdout_lines | unique | sort }}"
+  vars:
+    uids_regex: ^{{ item }}$
+
+- name: 6.2.7 - Ensure no duplicate UIDs exist
+  ansible.builtin.fail:
+    msg: UID {{ item.key }} is repetead {{ item.freq }} times
+  with_items: "{{ uids_freq }}"
+  when: item.freq > 1
+
+# 6.2.8 Ensure no duplicate GIDs exist
+- name: 6.2.8 - Ensure no duplicate GIDs exist
+  ansible.builtin.script: audit_6_2_8.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_8
+  failed_when: audit_6_2_8.stdout != ""
+  tags:
+    - level-1
+    - 6.2.8
+    - automated
+
+# 6.2.9 Ensure root is the only UID 0 account
+- name: 6.2.9 - Ensure root is the only UID 0 account
+  ansible.builtin.command: >
+    awk -F: '($3 == 0) { print $1 }' /etc/passwd
+  register: output
+  failed_when: output.stdout != "root"
+  tags:
+    - level-1
+    - 6.2.9
+    - automated
+
+# 6.2.10 Ensure root PATH Integrity
+- name: Remove /root/bin from root PATH if present
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: ^PATH=
+    state: absent
+  ignore_errors: true
+
+- name: Reload root env
+  ansible.builtin.command: runuser -l root -c 'source /root/.bash_profile'
+  ignore_errors: true
+
+- name: 6.2.10 - Ensure root PATH Integrity
+  ansible.builtin.script: audit_6_2_10.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_10
+  failed_when: audit_6_2_10.stdout != ""
+  ignore_errors: true
+  tags:
+    - level-1
+    - 6.2.10
+    - automated
+
+# 6.2.11 Ensure all users' home directories exist
+- name: 6.2.11 Ensure all users' home directories exist
+  ansible.builtin.script: audit_6_2_11.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_11
+  failed_when: audit_6_2_11.stdout != ""
+  tags:
+    - level-1
+    - 6.2.11
+    - automated
+
+# 6.2.12 Ensure users own their home directories
+- name: 6.2.12 Ensure users own their home directories
+  ansible.builtin.script: audit_6_2_12.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_12
+  failed_when: audit_6_2_12.stdout != ""
+  tags:
+    - level-1
+    - 6.2.12
+    - automated
+
+# 6.2.13 Ensure users' home directories permissions are 750 or more restrictive
+- name: 6.2.13 Ensure users' home directories permissions are 750 or more restrictive
+  ansible.builtin.script: audit_6_2_13.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_13
+  failed_when: audit_6_2_13.stdout != ""
+  tags:
+    - level-1
+    - 6.2.13
+    - automated
+
+# 6.2.14 Ensure users' dot files are not group or world writable
+- name: 6.2.14 Ensure users' dot files are not group or world writable
+  ansible.builtin.script: audit_6_2_14.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_14
+  failed_when: audit_6_2_14.stdout != ""
+  tags:
+    - level-1
+    - 6.2.14
+    - automated
+
+# 6.2.15 Ensure no users have .forward files
+- name: 6.2.15 Ensure no users have .forward files
+  ansible.builtin.script: audit_6_2_15.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_15
+  failed_when: audit_6_2_15.stdout != ""
+  tags:
+    - level-1
+    - 6.2.15
+    - automated
+
+# 6.2.16 Ensure no users have .netrc files
+- name: 6.2.16 Ensure no users have .netrc files
+  ansible.builtin.script: audit_6_2_16.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_16
+  tags:
+    - level-1
+    - 6.2.16
+    - automated
+
+- name: 6.2.16 Ensure no users have .netrc files
+  ansible.builtin.fail:
+    msg: "{{ item }}"
+  with_items: "{{ audit_6_2_16.stdout_lines }}"
+  when: item | regex_search("^FAILED")
+  tags:
+    - level-1
+    - 6.2.16
+    - automated
+
+# 6.2.17 Ensure no users have .rhosts files
+- name: 6.2.17 Ensure no users have .rhosts files
+  ansible.builtin.script: audit_6_2_17.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_17
+  failed_when: audit_6_2_17.stdout != ""
+  tags:
+    - level-1
+    - 6.2.17
+    - automated

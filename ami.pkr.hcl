@@ -9,9 +9,9 @@ packer {
 
 variable "instance_type" {
   type = string
-    # Valid values:
-    # - base:        Install CIS AL2, Custom 
-    # - docker:      Install base, CIS Docker
+  # Valid values:
+  # - base:        Install CIS AL2, Custom 
+  # - docker:      Install base, CIS Docker
   default = "base"
 }
 
@@ -67,5 +67,10 @@ build {
     # CentOS have special path to sftp-server
     # https://www.packer.io/plugins/provisioners/ansible/ansible
     sftp_command = "/usr/libexec/openssh/sftp-server -e"
+  }
+
+  post-processor "manifest" {
+    output     = "build.json"
+    strip_path = true
   }
 }

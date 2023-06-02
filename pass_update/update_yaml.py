@@ -28,6 +28,7 @@ def main():
     choice = input("Do you want to save the changes? Y/N: ")
     if choice == "Y" or choice == "y" or choice == "":
         with open("defaults/users.yml", "w") as f:
+            yaml.indent(mapping=2, sequence=4, offset=2)
             yaml.dump(yml, f)
     else:
         print("Changes not saved.")

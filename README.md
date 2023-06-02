@@ -23,8 +23,8 @@ pip3 install ansible-lint
 ## build new AMI
 ### Arguments
 `type`  can be set to:
-  - base:        Install only CIS, Reepay 
-  - docker:      Install base, Docker, ECS agent
+  - base:        Install only CIS AL2 and Custom
+  - docker:      Install base, CIS Docker, ECS agent
 Default value is `base`
 
 ```
@@ -40,11 +40,11 @@ Login with AWS SSO and build new ami.
 ## Test
 ### Arguments
 `type`  can be set to:
-  - base:        Install only CIS, Reepay 
-  - docker:      Install base, Docker, ECS agent
+  - base:        Install only CIS AL2 and Custom
+  - docker:      Install base, CIS Docker, ECS agent
 Default value is `base`
 
-`make test type=docker` will start a Docker container and test the ansible playbook
+`make test type=docker` will start a Docker container and test the ansible playbook.
 
 ## Server password hash generation
 

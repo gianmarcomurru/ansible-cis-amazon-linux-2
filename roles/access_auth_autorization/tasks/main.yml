@@ -1,0 +1,13 @@
+---
+# 5 Access, Authentication and Authorization
+
+- name: "5.1 Configure time-based job schedulers"
+  ansible.builtin.include_tasks: 5-1.yml
+- name: "5.2 Configure sudo"
+  ansible.builtin.include_tasks: 5-2.yml
+- name: "5.3 Configure SSH Server"
+  ansible.builtin.include_tasks: 5-3.yml
+- name: "5.4 Configure PAM"
+  ansible.builtin.include_tasks: 5-4.yml
+- name: "5.5 User Accounts and Environment"
+  ansible.builtin.include_tasks: 5-5.yml

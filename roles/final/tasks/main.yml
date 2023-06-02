@@ -1,2 +1,3 @@
 ---
-- ansible.builtin.include_tasks: ssh.yml
+- name: "Remove SSH Server from the system"
+  ansible.builtin.include_tasks: ssh.yml

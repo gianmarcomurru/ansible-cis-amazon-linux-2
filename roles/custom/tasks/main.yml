@@ -1,6 +1,9 @@
 ---
-# ops-users.yml is included in 5-access-auth-autorization/tasks/5-2.yml
-# - ansible.builtin.include_tasks: "ops-users.yml"
-- ansible.builtin.include_tasks: cloudwatch-agent.yml
-- ansible.builtin.include_tasks: session-manager.yml
-- ansible.builtin.include_tasks: ossec.yml
+# admin-users.yml is included in 5-access_auth_autorization/tasks/5-2.yml
+# - ansible.builtin.include_tasks: "admin-users.yml"
+- name: "CloudWatch Agent"
+  ansible.builtin.include_tasks: cloudwatch-agent.yml
+- name: "Session Manager"
+  ansible.builtin.include_tasks: session-manager.yml
+- name: "OSSEC HIDS"
+  ansible.builtin.include_tasks: ossec.yml

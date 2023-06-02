@@ -1,6 +1,5 @@
 # Standards: 0.11
 ---
-
 - name: Reload systemd
   ansible.builtin.systemd:
     daemon_reload: true

@@ -72,12 +72,12 @@
     state: touch
 
 # 3.19 Ensure that the /etc/default/docker file ownership is set to root:root
-# 3.22 Ensure that the /etc/default/docker file permissions are set to 644 or more restrictive
+# 3.20 Ensure that the /etc/default/docker file permissions are set to 644 or more restrictively
 # Ignored: there is no /etc/default/docker file in Amazon Linux 2
 
 - name: |-
-    3.20 Ensure that the /etc/sysconfig/docker file permissions are set to 644 or more restrictively
-    3.21 Ensure that the /etc/sysconfig/docker file ownership is set to root:root
+    3.21 Ensure that the /etc/sysconfig/docker file permissions are set to 644 or more restrictively
+    3.22 Ensure that the /etc/sysconfig/docker file ownership is set to root:root
   ansible.builtin.file:
     path: /etc/sysconfig/docker
     owner: root

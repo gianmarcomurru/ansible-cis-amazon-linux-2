@@ -1,0 +1,79 @@
+---
+
+- name: Auditing AL2 | 2.1.1.2
+  ansible.builtin.command: grep -E "^(server|pool)" /etc/chrony.conf
+  register: "audit_2_1_1_2"
+  failed_when: audit_2_1_1_2.stdout == ""
+
+- name: Auditing AL2 | 2.1.1.2
+  ansible.builtin.command: grep -e '^OPTIONS="\(.*\)-u chrony' /etc/sysconfig/chronyd
+  register: "audit_2_1_1_2"
+  failed_when: audit_2_1_1_2.stdout == ""
+
+- name: Auditing AL2 | 2.1.2
+  ansible.builtin.command: "rpm -qa xorg-x11-server*"
+  register: "audit_2_1_2"
+  failed_when: audit_2_1_2.rc != 0 and audit_2_1_2.stdout != ""
+
+- name: Auditing AL2 | 2.1.3->2.1.15
+  ansible.builtin.command: "rpm -q {{ item }}"
+  with_items:
+    - avahi-autoipd
+    - avahi
+    - cups
+    - dhcp
+    - openldap-servers
+    - bind
+    - vsftpd
+    - httpd
+    - dovecot
+    - samba
+    - squid
+    - net-snmp
+    - ypserv
+    - telnet-server
+  ignore_errors: true
+  register: "audit_2_1_2"
+  failed_when: audit_2_1_2.rc != 1
+
+- name: Auditing AL2 | 2.1.16
+  ansible.builtin.shell: >-
+    set -o pipefail && ss -lntu
+    | grep -E ':25\s'
+    | grep -E -v '\s(127.0.0.1|\[?::1\]?):25\s'
+  register: "audit_2_1_16"
+  failed_when: audit_2_1_16.stdout != ""
+
+- name: Auditing AL2 | 2.1.17->2.1.19
+  ansible.builtin.command: "rpm -q {{ item }}"
+  with_items:
+    - nfs-utils
+    - rpcbind
+    - rsync
+  ignore_errors: true
+  register: "audit_2_1_2"
+  failed_when: audit_2_1_2.rc != 1
+
+- name: Auditing AL2 | 2.2.1
+  ansible.builtin.command: "rpm -q {{ item }}"
+  with_items:
+    - ypbind
+    - rsh
+    - talk
+    - telnet
+    - openldap-clients
+  ignore_errors: true
+  register: "audit_2_2_1"
+  failed_when: audit_2_2_1.rc != 1
+
+- name: Auditing AL2 | 2.2.2
+  ansible.builtin.command: "rpm -q {{ item }}"
+  with_items:
+    - nis
+    - rsh-server
+    - talk-server
+    - telnet-server
+    - openldap-servers
+  ignore_errors: true
+  register: "audit_2_2_2"
+  failed_when: audit_2_2_2.rc != 1

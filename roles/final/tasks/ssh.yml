@@ -1,5 +1,4 @@
 ---
-
 - name: Remove SSH service from firewalld
   ansible.posix.firewalld:
     service: ssh
@@ -16,7 +15,7 @@
   tags:
     - ssh
 
-- name: Disable  and stop sshd
+- name: Disable and stop sshd
   ansible.builtin.service:
     name: sshd
     enabled: false

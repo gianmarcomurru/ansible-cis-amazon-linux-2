@@ -1,0 +1,220 @@
+---
+
+# 1.1 Filesystem Configuration
+
+- name: Auditing AL2 | 1.1.1.1-2-3
+  ansible.builtin.shell: "{{ item }}"
+  register: "audit_1_1_1_1"
+  with_items:
+    - set -o pipefail && modprobe -n -v cramfs | grep -E '(cramfs|install)'
+    - set -o pipefail && modprobe -n -v squashfs | grep -E '(squashfs|install)'
+    - set -o pipefail && modprobe -n -v udf | grep -E '(udf|install)'
+  failed_when: audit_1_1_1_1.rc == 0 and "install /bin/true" not in audit_1_1_1_1.stdout
+
+- name: Auditing AL2 | 1_1_1_1-2-3
+  ansible.builtin.shell: "{{ item }}"
+  register: "audit_1_1_1_1"
+  with_items:
+    - set -o pipefail && lsmod | grep cramfs
+    - set -o pipefail && lsmod | grep squashfs
+    - set -o pipefail && lsmod | grep udf
+  failed_when: audit_1_1_1_1.stdout != ""
+
+- name: Auditing AL2 | 1.1.6
+  ansible.builtin.command: findmnt -n /dev/shm
+  register: "audit_1_1_6"
+  failed_when: audit_1_1_6.stdout == ""
+
+- name: Auditing AL2 | 1.1.6
+  ansible.builtin.command: grep -E '\s/dev/shm\s' /etc/fstab
+  register: "audit_1_1_6"
+  failed_when: audit_1_1_6.stdout == ""
+
+- name: Reload /etc/fstab
+  ansible.builtin.command: mount -o remount /dev/shm
+
+- name: Auditing AL2 | 1.1.7-8-9
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    findmnt -n /dev/shm
+    | grep -Ev '\{{ item }}\b'
+  with_items: 
+    - bnoexec
+    - bnodev
+    - bnosuid
+  register: "audit_1_1_7"
+  failed_when: audit_1_1_7.stdout != ""
+
+- name: Auditing AL2 | 1.1.22
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    df --local -P 2> /dev/null
+    | awk '{if (NR!=1) print $6}'
+    | xargs -I '{}' find '{}' -xdev
+    -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null
+  register: "audit_1_1_22"
+  failed_when: audit_1_1_22.stdout != ""
+
+# 1.2 Configure Software Updates
+
+- name: Auditing AL2 | 1.2.3
+  ansible.builtin.command: grep ^\s*gpgcheck /etc/yum.conf
+  register: "audit_1_2_3"
+  failed_when: audit_1_2_3.stdout != "gpgcheck=1"
+
+- name: Auditing AL2 | 1.2.3
+  ansible.builtin.command: grep -P '^\h*gpgcheck=[^1\n\r]+\b(\h+.*)?$' /etc/yum.conf
+  register: "audit_1_2_3"
+  failed_when: audit_1_2_3.stdout != ""
+
+# 1.3 Filesystem Integrity Checking - Skipped
+
+# 1.4 Secure Boot Settings
+
+- name: Auditing AL2 | 1.4.1
+  ansible.builtin.copy:
+    src: 1-4-1.sh
+    dest: /tmp/1-4-1.sh
+    mode: 0755
+  
+- name: Auditing AL2 | 1.4.1
+  ansible.builtin.shell: bash /tmp/1-4-1.sh
+  register: "audit_1_4_1"
+  failed_when: audit_1_4_1.stdout != "PASSED"
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.4.2
+  ansible.builtin.command: "{{ item }}"
+  with_items:
+    - grep /sbin/sulogin /usr/lib/systemd/system/rescue.service
+    - grep /sbin/sulogin /usr/lib/systemd/system/emergency.service
+  register: "audit_1_4_2"
+  failed_when: audit_1_4_2.rc != 0 or "--fail --no-block default" not in audit_1_4_2.stdout
+
+# 1.5 Additional Process Hardening
+
+- name: Auditing AL2 | 1.5.1
+  ansible.builtin.command: "{{ item }}"
+  with_items:
+    - grep -E "^\s*\*\s+hard\s+core" /etc/security/limits.conf
+    - sysctl fs.suid_dumpable
+    - grep "fs\.suid_dumpable" /etc/sysctl.conf /etc/sysctl.d/*
+  register: "audit_1_5_1"
+  failed_when: audit_1_5_1.stdout == ""
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.5.2
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    journalctl
+    | grep 'protection: active'
+  register: "audit_1_5_2"
+  failed_when: audit_1_5_2.stdout == ""
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.5.3
+  ansible.builtin.command: "{{ item }}"
+  with_items:
+    - sysctl kernel.randomize_va_space
+    - grep "kernel\.randomize_va_space" /etc/sysctl.conf /etc/sysctl.d/*
+  register: "audit_1_5_3"
+  failed_when: audit_1_5_3.stdout == ""
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.5.4
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    rpm -q prelink
+    | grep "package prelink is not installed"
+  register: "audit_1_5_4"
+  failed_when: audit_1_5_4.stdout == ""
+
+# 1.6 Mandatory Access Control
+
+- name: Auditing AL2 | 1.6.1.1
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    rpm -q libselinux
+    | grep -E "^libselinux"
+  register: "audit_1_5_4"
+  failed_when: audit_1_5_4.stdout == ""
+
+- name: Auditing AL2 | 1.6.1.2
+  ansible.builtin.copy:
+    src: 1-6-1-2.sh
+    dest: /tmp/1-6-1-2.sh
+    mode: 0755
+
+- name: Auditing AL2 | 1.6.1.2
+  ansible.builtin.shell: bash /tmp/1-6-1-2.sh
+  register: "audit_1_6_1_2"
+  failed_when: audit_1_6_1_2.stdout != "PASSED"
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.6.1.3
+  ansible.builtin.shell: "{{ item }}"
+  with_items:
+    - grep -Ei '^\s*SELINUXTYPE=(targeted|mls)' /etc/selinux/config
+    - sestatus | grep -Ei '^\s*Loaded policy name:\s*(targeted|mls)'
+  register: "audit_1_6_1_3"
+  failed_when: audit_1_6_1_3.stdout == ""
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.6.1.4
+  ansible.builtin.shell: "{{ item }}"
+  with_items:
+    - getenforce | grep -Ei '^\s*(enforcing|permissive)'
+    - grep -Ei '^\s*SELINUX=(enforcing|permissive)' /etc/selinux/config
+  register: "audit_1_6_1_4"
+  failed_when: audit_1_6_1_4.stdout == ""
+  tags: 
+    - ignore_on_docker
+
+- name: Auditing AL2 | 1.6.1.5
+  ansible.builtin.shell: "{{ item }}"
+  with_items:
+    - grep -Ei '^\s*SELINUXTYPE=(targeted|mls)' /etc/selinux/config
+    - sestatus | grep -Ei '^\s*Loaded policy name:\s*(targeted|mls)'
+  register: "audit_1_6_1_5"
+  failed_when: audit_1_6_1_5.stdout == ""
+  tags: 
+    - ignore_on_docker
+
+# 1.6.1.5 skipped as addressed in roles/setup/tasks/1-6.yml
+
+- name: Auditing AL2 | 1.6.1.7-8
+  ansible.builtin.shell: >-
+    set -o pipefail &&
+    rpm -q setroubleshoot
+    | grep "package setroubleshoot is not installed"
+  with_items:
+    - setroubleshoot
+    - mcstrans
+  register: "audit_1_6_1_7"
+  failed_when: audit_1_6_1_7.stdout == ""
+
+# 1.7 Warning Banners
+
+- name: Auditing AL2 | 1.7.1-2-3
+  ansible.builtin.shell: cat "{{ item }}"
+  with_items:
+    - /etc/motd
+    - /etc/issue
+    - /etc/issue.net
+  register: "audit_1_7_1"
+  failed_when: audit_1_7_1.stdout == ""
+
+- name: Auditing AL2 | 1.7.4-5-6
+  ansible.builtin.shell: "{{ item }}"
+  with_items:
+    - stat /etc/motd | grep 0644
+    - stat /etc/issue | grep 0644
+    - stat /etc/issue.net | grep 0644
+  register: "audit_1_7_4"
+  failed_when: audit_1_7_4.stdout == ""

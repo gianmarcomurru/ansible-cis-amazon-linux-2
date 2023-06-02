@@ -1,0 +1,141 @@
+---
+
+- name: Auditing AL2 | 6.2.1
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    awk -F: '($2 != "x" ) { print $1 " is not set to shadowed passwords "}' /etc/passwd
+  register: "audit_6_2_1"
+  failed_when: audit_6_2_1.stdout != ""
+
+- name: Auditing AL2 | 6.2.2
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    awk -F: '($2 == "" ) { print $1 " does not have a password "}' /etc/shadow
+  register: "audit_6_2_2"
+  failed_when: audit_6_2_2.stdout != ""
+  
+- name: Auditing AL2 | 6.2.3
+  ansible.builtin.script: 6_2_3.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_3
+  failed_when: audit_6_2_3.stdout != ""
+  
+- name: Auditing AL2 | 6.2.4
+  ansible.builtin.command: >
+    awk -F: '($1=="shadow") {print $NF}' /etc/group
+  register: output
+  failed_when: output.stdout != ""
+  
+- name: Auditing AL2 | 6.2.4
+  ansible.builtin.command: >
+    awk -F: -v GID="$(awk -F: '($1=="shadow") {print $3}' /etc/group)" '($4==GID) {print $1}' /etc/passwd
+  register: output
+  failed_when: output.stdout != ""
+  
+- name: Auditing AL2 | 6.2.5
+  ansible.builtin.script: 6_2_5.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_5
+  failed_when: audit_6_2_5.stdout != ""
+  
+- name: Auditing AL2 | 6.2.6
+  ansible.builtin.script: 6_2_6.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_6
+  failed_when: audit_6_2_6.stdout != ""
+  
+- name: Auditing AL2 | 6.2.7
+  ansible.builtin.shell: >
+    set -o pipefail && cat /etc/passwd | cut -d: -f3
+  register: uids
+
+- ansible.builtin.set_fact:
+    uids_freq: "{{ uids_freq | default([]) + [{'key': item, 'freq': uids.stdout_lines | select('regex', uids_regex) | list | length}] }}"
+  loop: "{{ uids.stdout_lines | unique | sort }}"
+  vars:
+    uids_regex: ^{{ item }}$
+
+- name: Auditing AL2 | 6.2.7
+  ansible.builtin.fail:
+    msg: UID {{ item.key }} is repetead {{ item.freq }} times
+  with_items: "{{ uids_freq }}"
+  when: item.freq > 1
+
+- name: Auditing AL2 | 6.2.8
+  ansible.builtin.script: 6_2_8.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_8
+  failed_when: audit_6_2_8.stdout != ""
+  
+- name: Auditing AL2 | 6.2.9
+  ansible.builtin.command: >
+    awk -F: '($3 == 0) { print $1 }' /etc/passwd
+  register: output
+  failed_when: output.stdout != "root"
+  
+- name: Auditing AL2 | 6.2.10
+  ansible.builtin.script: 6_2_10.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_10
+  failed_when: audit_6_2_10.stdout != ""
+  ignore_errors: true
+  
+- name: Auditing AL2 | 6.2.11
+  ansible.builtin.script: 6_2_11.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_11
+  failed_when: audit_6_2_11.stdout != ""
+  
+- name: Auditing AL2 | 6.2.12
+  ansible.builtin.script: 6_2_12.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_12
+  failed_when: audit_6_2_12.stdout != ""
+  
+- name: Auditing AL2 | 6.2.13
+  ansible.builtin.script: 6_2_13.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_13
+  failed_when: audit_6_2_13.stdout != ""
+  
+- name: Auditing AL2 | 6.2.14
+  ansible.builtin.script: 6_2_14.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_14
+  failed_when: audit_6_2_14.stdout != ""
+  
+- name: Auditing AL2 | 6.2.15
+  ansible.builtin.script: 6_2_15.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_15
+  failed_when: audit_6_2_15.stdout != ""
+  
+- name: Auditing AL2 | 6.2.16
+  ansible.builtin.script: 6_2_16.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_16
+  
+- name: Auditing AL2 | 6.2.16
+  ansible.builtin.fail:
+    msg: "{{ item }}"
+  with_items: "{{ audit_6_2_16.stdout_lines }}"
+  when: item | regex_search("^FAILED")
+  
+- name: Auditing AL2 | 6.2.17
+  ansible.builtin.script: 6_2_17.sh
+  check_mode: false
+  changed_when: false
+  register: audit_6_2_17
+  failed_when: audit_6_2_17.stdout != ""
+  
