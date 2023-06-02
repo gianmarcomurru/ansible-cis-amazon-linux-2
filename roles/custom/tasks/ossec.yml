@@ -73,16 +73,6 @@
   tags:
     - ossec
 
-- name: Copy local_decoder.xml to ossec-hids
-  ansible.builtin.copy:
-    src: ossec/local_decoder.xml
-    dest: /var/ossec/etc/local_decoder.xml
-    owner: root
-    group: ossec
-    mode: "0640"
-  tags:
-    - ossec
-
 - name: Copy local_rules.xml to ossec-hids
   ansible.builtin.copy:
     src: ossec/local_rules.xml
